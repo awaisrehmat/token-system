@@ -1,0 +1,77 @@
+<%- include('../partials/header') %>
+
+<div class="mb-4">
+  <h1 class="h3 mb-1">Consultant Management</h1>
+  <p class="text-secondary mb-0">Add or remove clinic consultants.</p>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white py-3"><h2 class="h5 mb-0">Add Consultant</h2></div>
+      <div class="card-body">
+        <form action="/consultants" method="post">
+          <div class="mb-3">
+            <label for="name" class="form-label">Consultant Name</label>
+            <input type="text" class="form-control" id="name" name="name" maxlength="100" required>
+          </div>
+          <div class="mb-3">
+            <label for="specialization" class="form-label">Specialization</label>
+            <input type="text" class="form-control" id="specialization" name="specialization" maxlength="100" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Add Consultant</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light"><tr><th>Name</th><th>Specialization</th><th class="text-end">Action</th></tr></thead>
+          <tbody>
+            <% if (!consultants.length) { %>
+              <tr><td colspan="3" class="text-center text-secondary py-5">No consultants added yet.</td></tr>
+            <% } %>
+            <% consultants.forEach((consultant) => { %>
+              <tr>
+                <td class="fw-medium"><%= consultant.name %></td>
+                <td><%= consultant.specialization %></td>
+                <td class="text-end">
+                  <form action="/consultants/<%= consultant._id %>/delete" method="post" class="delete-form">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mt-4">
+  <div class="card-header bg-white py-3">
+    <h2 class="h5 mb-0">Printable Token Header & Footer</h2>
+  </div>
+  <div class="card-body">
+    <form action="/consultants/print-settings" method="post" class="row g-3">
+      <div class="col-md-6">
+        <label for="printHeader" class="form-label">Printable Header</label>
+        <input type="text" class="form-control" id="printHeader" name="header" maxlength="120" value="<%= printSetting.header %>" required>
+        <div class="form-text">Shown at the top of every printed token.</div>
+      </div>
+      <div class="col-md-6">
+        <label for="printFooter" class="form-label">Printable Footer</label>
+        <input type="text" class="form-control" id="printFooter" name="footer" maxlength="250" value="<%= printSetting.footer %>" required>
+        <div class="form-text">Shown at the bottom of every printed token.</div>
+      </div>
+      <div class="col-12">
+        <button type="submit" class="btn btn-primary">Save Print Settings</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,118 @@
+@page {
+  size: 80mm auto;
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f3f4f6;
+  color: #000;
+  font-family: Arial, sans-serif;
+}
+
+.controls {
+  max-width: 80mm;
+  margin: 20px auto 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.controls .alert {
+  flex-basis: 100%;
+  margin-bottom: 0;
+}
+
+.token-receipt {
+  width: 80mm;
+  margin: 0 auto 20px;
+  padding: 5mm;
+  background: #fff;
+  font-size: 12px;
+}
+
+.token-receipt header {
+  text-align: center;
+}
+
+.token-receipt h1 {
+  margin: 0;
+  font-size: 21px;
+}
+
+.token-receipt header p,
+.token-label {
+  margin: 4px 0;
+  text-align: center;
+}
+
+.token-number {
+  font-size: 52px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  margin: 7px 0;
+}
+
+.divider {
+  border-top: 1px dashed #000;
+  margin: 8px 0;
+}
+
+dl {
+  margin: 0;
+}
+
+dl > div {
+  display: flex;
+  gap: 8px;
+  margin: 5px 0;
+}
+
+dt {
+  flex: 0 0 27mm;
+  font-weight: 700;
+}
+
+dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.description {
+  display: block;
+}
+
+.description dd {
+  margin-top: 2px;
+}
+
+.wait-message {
+  margin: 8px 0 0;
+  font-weight: 700;
+  text-align: center;
+}
+
+@media print {
+  body {
+    width: 80mm;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .token-receipt {
+    width: 80mm;
+    margin: 0;
+    padding: 5mm;
+  }
+}

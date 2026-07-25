@@ -1,0 +1,23 @@
+{
+  "name": "doctor-patient-token-system",
+  "version": "1.0.0",
+  "description": "A minimal doctor patient token system",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "check": "node --check app.js && node --check controllers/patientController.js && node --check controllers/consultantController.js && node --check routes/patientRoutes.js && node --check routes/consultantRoutes.js && node --check models/PrintSetting.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "ejs": "^6.0.1",
+    "express": "^4.21.2",
+    "mongoose": "^8.9.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
