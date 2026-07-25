@@ -1,6 +1,6 @@
 <%- include('../partials/header') %>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="page-heading d-flex flex-wrap gap-3 justify-content-between align-items-center mb-4">
   <div>
     <h1 class="h3 mb-1"><%= isEdit ? 'Edit Patient' : 'Register Patient' %></h1>
     <p class="text-secondary mb-0"><%= isEdit ? 'Update the patient record.' : 'Create a new patient token.' %></p>
@@ -17,7 +17,10 @@
   </div>
 <% } %>
 
-<div class="card border-0 shadow-sm">
+<div class="card app-card">
+  <div class="card-header bg-white py-3 px-4">
+    <h2 class="h5 mb-0"><i class="bi bi-person-vcard me-2 text-primary"></i>Patient Information</h2>
+  </div>
   <div class="card-body p-4">
     <form action="<%= isEdit ? `/patients/${patient._id}/update` : '/patients' %>" method="post" class="row g-3" novalidate>
       <div class="col-md-6">
@@ -92,7 +95,7 @@
       </div>
 
       <div class="col-12 d-flex gap-2 pt-2">
-        <button type="submit" class="btn btn-primary"><%= isEdit ? 'Update Patient' : 'Register & View Token' %></button>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i> <%= isEdit ? 'Update Patient' : 'Register & View Token' %></button>
         <a href="/patients" class="btn btn-light">Cancel</a>
       </div>
     </form>
