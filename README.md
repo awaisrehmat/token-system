@@ -12,6 +12,8 @@ A minimal receptionist-facing token system built with Node.js, Express, MongoDB 
 - 80mm thermal-printer token layout
 - Editable printable token header and footer under Physician Management
 - Server-side validation and friendly form errors
+- Session-based access control for authorized staff
+- Automatic submit-button locking to prevent accidental double posting
 
 ## Installation
 
@@ -44,8 +46,10 @@ A minimal receptionist-facing token system built with Node.js, Express, MongoDB 
 2. In **Project Settings → Environment Variables**, add:
 
    - `MONGODB_URI`
-   - `CLINIC_NAME`
    - `CLINIC_TIMEZONE`
+   - `ADMIN_USERNAME`
+   - `ADMIN_PASSWORD`
+   - `SESSION_SECRET`
 
 3. Add the variables to the Production environment (and Preview if you use preview deployments).
 4. In MongoDB Atlas, allow connections from your deployment environment. For a simple setup, add `0.0.0.0/0` under Network Access and use a strong database username and password. For stricter production security, use an appropriate private networking option.
@@ -58,11 +62,15 @@ Vercel imports `app.js` as an Express application. MongoDB connections are cache
 ```env
 MONGODB_URI=your_mongodb_atlas_connection_string
 PORT=3000
-CLINIC_NAME=My Clinic
 CLINIC_TIMEZONE=Asia/Karachi
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=change_this_to_a_strong_password
+SESSION_SECRET=replace_with_a_long_random_secret
 ```
 
 `CLINIC_TIMEZONE` must be a valid IANA time-zone name. Token dates and dashboard totals use this timezone.
+
+The application name in the navbar, login page, footer, browser title, and printed receipt comes from the saved **Printable Header** under Physician Management.
 
 ## Notes
 

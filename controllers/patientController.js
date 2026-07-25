@@ -282,7 +282,7 @@ exports.token = async (req, res, next) => {
     ]);
     if (!patient) return res.status(404).render('error', { title: 'Patient Not Found', pageMessage: 'Patient record not found.' });
     const printSetting = savedPrintSetting || {
-      header: process.env.CLINIC_NAME || 'My Clinic',
+      header: 'My Clinic',
       footer: 'Please wait for your token number to be called.'
     };
     return res.render('patients/token', {

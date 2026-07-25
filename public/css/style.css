@@ -60,6 +60,15 @@ body {
   color: #fff;
 }
 
+.nav-logout-form {
+  display: flex;
+}
+
+.nav-logout-button {
+  border: 0;
+  background: transparent;
+}
+
 main.container {
   min-height: calc(100vh - 150px);
 }
@@ -270,6 +279,59 @@ main.container {
   font-size: 0.8rem;
 }
 
+.login-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  background:
+    radial-gradient(circle at 15% 15%, rgba(37, 99, 235, 0.2), transparent 28rem),
+    linear-gradient(135deg, #0f172a, #172554);
+}
+
+.login-shell {
+  width: 100%;
+  max-width: 460px;
+  padding: 1rem;
+}
+
+.login-card {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 1.25rem;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.3);
+  padding: 2rem;
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 2rem;
+}
+
+.login-brand .brand-mark {
+  background: var(--app-primary);
+  color: #fff;
+}
+
+.login-brand h1,
+.login-card h2 {
+  margin: 0;
+  color: var(--app-navy);
+  font-size: 1.25rem;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+
+.login-brand p {
+  margin: 0.15rem 0 0;
+  color: var(--app-muted);
+  font-size: 0.8rem;
+}
+
+.login-card h2 {
+  font-size: 1.5rem;
+}
+
 @media (max-width: 991.98px) {
   .navbar-collapse {
     padding-top: 0.75rem;
@@ -277,6 +339,12 @@ main.container {
 
   .navbar-nav {
     gap: 0.25rem;
+  }
+
+  .nav-logout-form,
+  .nav-logout-button {
+    width: 100%;
+    text-align: left;
   }
 }
 

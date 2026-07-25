@@ -19,3 +19,20 @@ if (cnicInput) {
   cnicInput.addEventListener('input', formatCnic);
   formatCnic();
 }
+
+document.querySelectorAll('form[method="post"]').forEach((form) => {
+  form.addEventListener('submit', (event) => {
+    if (event.defaultPrevented) return;
+
+    const submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+    submitButtons.forEach((button) => {
+      button.disabled = true;
+      button.setAttribute('aria-disabled', 'true');
+
+      if (button.tagName === 'BUTTON') {
+        button.dataset.originalHtml = button.innerHTML;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Please wait...';
+      }
+    });
+  });
+});

@@ -14,7 +14,7 @@ exports.index = async (req, res, next) => {
       PrintSetting.findOne({ key: 'default' }).lean()
     ]);
     const printSetting = savedPrintSetting || {
-      header: process.env.CLINIC_NAME || 'My Clinic',
+      header: 'My Clinic',
       footer: 'Please wait for your token number to be called.'
     };
     res.render('consultants/index', { title: 'Physician Management', consultants, printSetting });

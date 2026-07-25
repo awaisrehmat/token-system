@@ -27,6 +27,9 @@
           <a class="nav-link <%= currentPath === '/patients/new' ? 'active' : '' %>" href="/patients/new"><i class="bi bi-person-plus me-1"></i> Register</a>
           <a class="nav-link <%= currentPath === '/patients' ? 'active' : '' %>" href="/patients"><i class="bi bi-people me-1"></i> Patients</a>
           <a class="nav-link <%= currentPath === '/consultants' ? 'active' : '' %>" href="/consultants"><i class="bi bi-person-badge me-1"></i> Physicians</a>
+          <form action="/logout" method="post" class="nav-logout-form">
+            <button type="submit" class="nav-link nav-logout-button"><i class="bi bi-box-arrow-right me-1"></i> Sign Out</button>
+          </form>
         </div>
       </div>
     </div>
