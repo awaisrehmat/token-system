@@ -209,7 +209,7 @@ exports.editForm = async (req, res, next) => {
       Patient.findById(req.params.id).lean(),
       Consultant.find().sort({ name: 1 }).lean()
     ]);
-    if (!patient) return res.status(404).render('error', { title: 'Patient Not Found', message: 'Patient record not found.' });
+    if (!patient) return res.status(404).render('error', { title: 'Patient Not Found', pageMessage: 'Patient record not found.' });
 
     return res.render('patients/form', {
       title: 'Edit Patient',
@@ -228,7 +228,7 @@ exports.update = async (req, res, next) => {
   try {
     const existingPatient = await Patient.findById(req.params.id).select('tokenNumber').lean();
     if (!existingPatient) {
-      return res.status(404).render('error', { title: 'Patient Not Found', message: 'Patient record not found.' });
+      return res.status(404).render('error', { title: 'Patient Not Found', pageMessage: 'Patient record not found.' });
     }
     data.tokenNumber = existingPatient.tokenNumber;
 
@@ -250,7 +250,7 @@ exports.update = async (req, res, next) => {
     }
 
     const patient = await Patient.findByIdAndUpdate(req.params.id, data, { new: true, runValidators: true });
-    if (!patient) return res.status(404).render('error', { title: 'Patient Not Found', message: 'Patient record not found.' });
+    if (!patient) return res.status(404).render('error', { title: 'Patient Not Found', pageMessage: 'Patient record not found.' });
     return res.redirect(`/patients?message=${encodeURIComponent('Patient updated successfully.')}`);
   } catch (error) {
     if (error.code === 11000) {
@@ -282,7 +282,7 @@ exports.token = async (req, res, next) => {
       Patient.findById(req.params.id).populate('consultant').lean(),
       PrintSetting.findOne({ key: 'default' }).lean()
     ]);
-    if (!patient) return res.status(404).render('error', { title: 'Patient Not Found', message: 'Patient record not found.' });
+    if (!patient) return res.status(404).render('error', { title: 'Patient Not Found', pageMessage: 'Patient record not found.' });
     const printSetting = savedPrintSetting || {
       header: process.env.CLINIC_NAME || 'My Clinic',
       footer: 'Please wait for your token number to be called.'

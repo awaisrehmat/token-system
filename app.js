@@ -25,6 +25,18 @@ app.use((req, res, next) => {
   next();
 });
 
+// Vercel imports this Express app instead of running app.js as the main
+// process. Connecting per request with a cached promise supports both Vercel
+// serverless instances and the normal local server.
+app.use(async (req, res, next) => {
+  try {
+    await connectDatabase();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get('/', dashboard);
 app.use('/patients', patientRoutes);
 app.use('/consultants', consultantRoutes);
@@ -32,7 +44,7 @@ app.use('/consultants', consultantRoutes);
 app.use((req, res) => {
   res.status(404).render('error', {
     title: 'Page Not Found',
-    message: 'The page you requested could not be found.'
+    pageMessage: 'The page you requested could not be found.'
   });
 });
 
@@ -40,7 +52,9 @@ app.use((error, req, res, next) => {
   console.error(error);
   res.status(500).render('error', {
     title: 'Something Went Wrong',
-    message: 'An unexpected error occurred. Please try again.'
+    pageMessage: process.env.NODE_ENV === 'production'
+      ? 'The application could not connect to its service. Please check the deployment configuration and try again.'
+      : error.message
   });
 });
 

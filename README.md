@@ -38,6 +38,21 @@ A minimal receptionist-facing token system built with Node.js, Express, MongoDB 
 
 7. Open `http://localhost:3000`.
 
+## Deploying to Vercel
+
+1. Import the repository into Vercel.
+2. In **Project Settings → Environment Variables**, add:
+
+   - `MONGODB_URI`
+   - `CLINIC_NAME`
+   - `CLINIC_TIMEZONE`
+
+3. Add the variables to the Production environment (and Preview if you use preview deployments).
+4. In MongoDB Atlas, allow connections from your deployment environment. For a simple setup, add `0.0.0.0/0` under Network Access and use a strong database username and password. For stricter production security, use an appropriate private networking option.
+5. Redeploy after adding or changing environment variables.
+
+Vercel imports `app.js` as an Express application. MongoDB connections are cached within each warm serverless instance.
+
 ## Environment variables
 
 ```env
