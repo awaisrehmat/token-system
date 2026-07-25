@@ -17,7 +17,7 @@ exports.index = async (req, res, next) => {
       header: process.env.CLINIC_NAME || 'My Clinic',
       footer: 'Please wait for your token number to be called.'
     };
-    res.render('consultants/index', { title: 'Consultant Management', consultants, printSetting });
+    res.render('consultants/index', { title: 'Physician Management', consultants, printSetting });
   } catch (error) {
     next(error);
   }
@@ -53,15 +53,15 @@ exports.create = async (req, res, next) => {
     const returnTo = safeReturnTo(req.body.returnTo);
 
     if (!name || !specialization) {
-      return res.redirect(`${returnTo}?error=${encodeURIComponent('Consultant name and specialization are required.')}`);
+      return res.redirect(`${returnTo}?error=${encodeURIComponent('Physician name and specialization are required.')}`);
     }
 
     await Consultant.create({ name, specialization });
-    return res.redirect(`${returnTo}?message=${encodeURIComponent('Consultant added successfully.')}`);
+    return res.redirect(`${returnTo}?message=${encodeURIComponent('Physician added successfully.')}`);
   } catch (error) {
     if (error.code === 11000) {
       const returnTo = safeReturnTo(req.body.returnTo);
-      return res.redirect(`${returnTo}?error=${encodeURIComponent('A consultant with this name already exists.')}`);
+      return res.redirect(`${returnTo}?error=${encodeURIComponent('A physician with this name already exists.')}`);
     }
     return next(error);
   }
@@ -70,7 +70,7 @@ exports.create = async (req, res, next) => {
 exports.remove = async (req, res, next) => {
   try {
     await Consultant.findByIdAndDelete(req.params.id);
-    res.redirect(`/consultants?message=${encodeURIComponent('Consultant deleted successfully.')}`);
+    res.redirect(`/consultants?message=${encodeURIComponent('Physician deleted successfully.')}`);
   } catch (error) {
     next(error);
   }

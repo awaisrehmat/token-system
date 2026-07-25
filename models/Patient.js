@@ -24,7 +24,7 @@ const patientSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-patientSchema.index({ tokenDate: 1, tokenNumber: 1 }, { unique: true });
+patientSchema.index({ tokenDate: 1, consultant: 1, tokenNumber: 1 }, { unique: true });
 patientSchema.index({ tokenDate: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Patient', patientSchema);

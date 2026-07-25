@@ -27,7 +27,9 @@
       <div><dt>Patient</dt><dd><%= patient.patientName %></dd></div>
       <div><dt>Age / Sex</dt><dd><%= patient.age %> / <%= patient.sex %></dd></div>
       <div><dt>CNIC</dt><dd><%= formatCnic(patient.cnic) %></dd></div>
-      <div><dt>Consultant</dt><dd><%= patient.consultant ? patient.consultant.name : 'Not available' %></dd></div>
+      <div><dt>Phone</dt><dd><%= patient.contactNumber %></dd></div>
+      <div><dt>Address</dt><dd><%= patient.address %></dd></div>
+      <div><dt>Physician</dt><dd><%= patient.consultant ? patient.consultant.name : 'Not available' %></dd></div>
       <div><dt>Patient Type</dt><dd><%= patient.patientType %></dd></div>
       <div><dt>Date & Time</dt><dd><%= formatDateTime(patient.createdAt) %></dd></div>
       <div class="description"><dt>Description</dt><dd><%= patient.description || '—' %></dd></div>

@@ -7,10 +7,10 @@ A minimal receptionist-facing token system built with Node.js, Express, MongoDB 
 - Fully automatic daily token numbers reset to `001`
 - Atomic daily counters and duplicate-token protection
 - Patient registration, search, date filtering, pagination, editing, and deletion
-- Consultant management and quick consultant creation from the patient form
+- Physician management and quick physician creation from the patient form
 - CNIC normalization, validation, formatting, and partial search
 - 80mm thermal-printer token layout
-- Editable printable token header and footer under Consultant Management
+- Editable printable token header and footer under Physician Management
 - Server-side validation and friendly form errors
 
 ## Installation
@@ -68,5 +68,6 @@ CLINIC_TIMEZONE=Asia/Karachi
 
 - CNIC values are stored as 13-digit strings and displayed with dashes.
 - Token numbers are generated automatically and cannot be edited by users.
-- The patient-list search checks patient name, CNIC, contact number, token number, consultant name, and address.
+- Every physician has an independent daily token sequence beginning at `001`.
+- The patient-list search checks patient name, CNIC, contact number, token number, physician name, and address.
 - For an 80mm printer, choose the printer's 80mm paper size and disable browser headers and footers in the print dialog.

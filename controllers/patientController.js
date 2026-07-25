@@ -39,16 +39,16 @@ function validatePatient(data) {
   if (!/^\d{13}$/.test(data.cnic)) errors.push('CNIC must contain exactly 13 digits.');
   if (!data.contactNumber) errors.push('Contact number is required.');
   if (!data.address) errors.push('Address is required.');
-  if (!mongoose.isValidObjectId(data.consultant)) errors.push('Please select a consultant.');
+  if (!mongoose.isValidObjectId(data.consultant)) errors.push('Please select a physician.');
   if (!data.patientType) errors.push('Patient type is required.');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(data.tokenDate || '')) errors.push('A valid date is required.');
   return errors;
 }
 
-async function nextToken(date) {
+async function nextToken(date, physician) {
   try {
     const counter = await DailyCounter.findOneAndUpdate(
-      { date },
+      { date, physician },
       { $inc: { sequence: 1 } },
       { new: true, upsert: true, setDefaultsOnInsert: true }
     );
@@ -58,7 +58,7 @@ async function nextToken(date) {
     // index lets one win; the other safely retries against the created document.
     if (error.code === 11000) {
       const counter = await DailyCounter.findOneAndUpdate(
-        { date },
+        { date, physician },
         { $inc: { sequence: 1 } },
         { new: true }
       );
@@ -68,12 +68,12 @@ async function nextToken(date) {
   }
 }
 
-async function availableGeneratedToken(date) {
+async function availableGeneratedToken(date, physician) {
   let token;
   let exists;
   do {
-    token = await nextToken(date);
-    exists = await Patient.exists({ tokenDate: date, tokenNumber: token });
+    token = await nextToken(date, physician);
+    exists = await Patient.exists({ tokenDate: date, consultant: physician, tokenNumber: token });
   } while (exists);
   return token;
 }
@@ -81,16 +81,14 @@ async function availableGeneratedToken(date) {
 exports.dashboard = async (req, res, next) => {
   try {
     const today = getClinicDate();
-    const [todayTotal, counter, recentPatients] = await Promise.all([
+    const [todayTotal, recentPatients] = await Promise.all([
       Patient.countDocuments({ tokenDate: today }),
-      DailyCounter.findOne({ date: today }).lean(),
       Patient.find().populate('consultant').sort({ createdAt: -1 }).limit(5).lean()
     ]);
 
     res.render('dashboard', {
       title: 'Dashboard',
       todayTotal,
-      currentToken: counter ? formatToken(counter.sequence) : '000',
       recentPatients,
       formatCnic,
       formatDateTime
@@ -171,7 +169,7 @@ exports.create = async (req, res, next) => {
     const consultantExists = mongoose.isValidObjectId(data.consultant)
       ? await Consultant.exists({ _id: data.consultant })
       : false;
-    if (!consultantExists) errors.push('The selected consultant no longer exists.');
+    if (!consultantExists) errors.push('The selected physician no longer exists.');
 
     if (errors.length) {
       const consultants = await Consultant.find().sort({ name: 1 }).lean();
@@ -184,7 +182,7 @@ exports.create = async (req, res, next) => {
       });
     }
 
-    data.tokenNumber = await availableGeneratedToken(data.tokenDate);
+    data.tokenNumber = await availableGeneratedToken(data.tokenDate, data.consultant);
 
     const patient = await Patient.create(data);
     return res.redirect(`/patients/${patient._id}/token?message=${encodeURIComponent('Patient registered successfully.')}`);
@@ -236,7 +234,7 @@ exports.update = async (req, res, next) => {
     const consultantExists = mongoose.isValidObjectId(data.consultant)
       ? await Consultant.exists({ _id: data.consultant })
       : false;
-    if (!consultantExists) errors.push('The selected consultant no longer exists.');
+    if (!consultantExists) errors.push('The selected physician no longer exists.');
 
     if (errors.length) {
       const consultants = await Consultant.find().sort({ name: 1 }).lean();

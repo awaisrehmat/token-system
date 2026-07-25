@@ -57,19 +57,19 @@
       </div>
 
       <div class="col-md-6">
-        <label for="consultant" class="form-label">Consultant Name</label>
+        <label for="consultant" class="form-label">Physician Name</label>
         <div class="input-group">
           <select class="form-select" id="consultant" name="consultant" required>
-            <option value="">Select consultant</option>
+            <option value="">Select physician</option>
             <% consultants.forEach((consultant) => { %>
               <option value="<%= consultant._id %>" <%= String(patient.consultant || '') === String(consultant._id) ? 'selected' : '' %>>
                 <%= consultant.name %> — <%= consultant.specialization %>
               </option>
             <% }) %>
           </select>
-          <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#consultantModal">Add Consultant</button>
+          <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#consultantModal">Add Physician</button>
         </div>
-        <% if (!consultants.length) { %><div class="form-text text-danger">Add a consultant before saving this patient.</div><% } %>
+        <% if (!consultants.length) { %><div class="form-text text-danger">Add a physician before saving this patient.</div><% } %>
       </div>
       <div class="col-md-6">
         <label for="patientType" class="form-label">Patient Type</label>
@@ -107,13 +107,13 @@
     <div class="modal-content">
       <form action="/consultants" method="post">
         <div class="modal-header">
-          <h2 class="modal-title fs-5" id="consultantModalLabel">Add Consultant</h2>
+          <h2 class="modal-title fs-5" id="consultantModalLabel">Add Physician</h2>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <input type="hidden" name="returnTo" value="<%= isEdit ? `/patients/${patient._id}/edit` : '/patients/new' %>">
           <div class="mb-3">
-            <label for="consultantName" class="form-label">Consultant Name</label>
+            <label for="consultantName" class="form-label">Physician Name</label>
             <input type="text" class="form-control" id="consultantName" name="name" maxlength="100" required>
           </div>
           <div>
@@ -123,7 +123,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Consultant</button>
+          <button type="submit" class="btn btn-primary">Save Physician</button>
         </div>
       </form>
     </div>
