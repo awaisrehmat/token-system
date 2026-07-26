@@ -83,19 +83,50 @@
     </table>
   </div>
 
-  <% if (totalPages > 1) { %>
-    <div class="card-footer bg-white">
+  <div class="card-footer bg-white d-flex flex-wrap gap-3 align-items-center justify-content-between">
+    <small class="text-secondary">
+      <% if (total) { %>
+        Showing <strong><%= ((page - 1) * pageSize) + 1 %></strong>–<strong><%= Math.min(page * pageSize, total) %></strong> of <strong><%= total.toLocaleString() %></strong> records
+      <% } else { %>
+        No records
+      <% } %>
+    </small>
+
+    <% if (totalPages > 1) { %>
+      <%
+        const paginationUrl = (number) => `/patients?page=${number}&search=${encodeURIComponent(search)}&date=${encodeURIComponent(date)}`;
+        const startPage = Math.max(1, page - 2);
+        const endPage = Math.min(totalPages, page + 2);
+      %>
       <nav aria-label="Patient list pages">
-        <ul class="pagination pagination-sm justify-content-center mb-0">
-          <% for (let number = 1; number <= totalPages; number += 1) { %>
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item <%= page === 1 ? 'disabled' : '' %>">
+            <a class="page-link" href="<%= page === 1 ? '#' : paginationUrl(page - 1) %>" aria-label="Previous"><i class="bi bi-chevron-left"></i></a>
+          </li>
+
+          <% if (startPage > 1) { %>
+            <li class="page-item"><a class="page-link" href="<%= paginationUrl(1) %>">1</a></li>
+            <% if (startPage > 2) { %><li class="page-item disabled"><span class="page-link">…</span></li><% } %>
+          <% } %>
+
+          <% for (let number = startPage; number <= endPage; number += 1) { %>
             <li class="page-item <%= number === page ? 'active' : '' %>">
-              <a class="page-link" href="/patients?page=<%= number %>&search=<%= encodeURIComponent(search) %>&date=<%= encodeURIComponent(date) %>"><%= number %></a>
+              <a class="page-link" href="<%= paginationUrl(number) %>"><%= number %></a>
             </li>
           <% } %>
+
+          <% if (endPage < totalPages) { %>
+            <% if (endPage < totalPages - 1) { %><li class="page-item disabled"><span class="page-link">…</span></li><% } %>
+            <li class="page-item"><a class="page-link" href="<%= paginationUrl(totalPages) %>"><%= totalPages %></a></li>
+          <% } %>
+
+          <li class="page-item <%= page === totalPages ? 'disabled' : '' %>">
+            <a class="page-link" href="<%= page === totalPages ? '#' : paginationUrl(page + 1) %>" aria-label="Next"><i class="bi bi-chevron-right"></i></a>
+          </li>
         </ul>
       </nav>
-    </div>
-  <% } %>
+    <% } %>
+  </div>
 </div>
 
 <div class="modal fade" id="newTokenModal" tabindex="-1" aria-labelledby="newTokenModalLabel" aria-hidden="true">

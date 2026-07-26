@@ -159,6 +159,8 @@ exports.index = async (req, res, next) => {
       date,
       page,
       totalPages: Math.max(Math.ceil(total / PAGE_SIZE), 1),
+      total,
+      pageSize: PAGE_SIZE,
       consultants,
       formatCnic
     });
