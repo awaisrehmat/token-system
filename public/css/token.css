@@ -31,9 +31,9 @@ body {
 .token-receipt {
   width: 80mm;
   margin: 0 auto 20px;
-  padding: 5mm;
+  padding: 2mm 4mm 3mm;
   background: #fff;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .token-receipt header {
@@ -42,26 +42,41 @@ body {
 
 .token-receipt h1 {
   margin: 0;
-  font-size: 21px;
+  font-size: 19px;
+  line-height: 1.1;
 }
 
 .token-receipt header p,
 .token-label {
-  margin: 4px 0;
+  margin: 2px 0;
   text-align: center;
 }
 
 .token-number {
-  font-size: 52px;
+  font-size: 46px;
   font-weight: 800;
   line-height: 1;
   text-align: center;
-  margin: 7px 0;
+  margin: 3px 0;
+}
+
+.mr-number {
+  margin: 2px 0 4px;
+  text-align: center;
+}
+
+.mr-number span {
+  font-size: 9px;
+}
+
+.mr-number strong {
+  margin-left: 3px;
+  font-size: 12px;
 }
 
 .divider {
   border-top: 1px dashed #000;
-  margin: 8px 0;
+  margin: 5px 0;
 }
 
 dl {
@@ -71,7 +86,7 @@ dl {
 dl > div {
   display: flex;
   gap: 8px;
-  margin: 5px 0;
+  margin: 3px 0;
 }
 
 dt {
@@ -93,7 +108,7 @@ dd {
 }
 
 .wait-message {
-  margin: 8px 0 0;
+  margin: 5px 0 0;
   font-weight: 700;
   text-align: center;
 }
@@ -113,6 +128,6 @@ dd {
   .token-receipt {
     width: 80mm;
     margin: 0;
-    padding: 5mm;
+    padding: 2mm 4mm 3mm;
   }
 }
