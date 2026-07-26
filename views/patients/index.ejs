@@ -58,6 +58,7 @@
             <td>
               <div class="d-flex flex-wrap gap-1">
                 <a href="/patients/<%= patient._id %>/token" class="btn btn-sm btn-action btn-outline-secondary" title="View"><i class="bi bi-eye"></i></a>
+                <a href="/patients/<%= patient._id %>/history" class="btn btn-sm btn-action btn-outline-dark" title="Patient History"><i class="bi bi-clock-history"></i></a>
                 <a href="/patients/<%= patient._id %>/edit" class="btn btn-sm btn-action btn-outline-primary" title="Edit"><i class="bi bi-pencil"></i></a>
                 <a href="/patients/<%= patient._id %>/token?print=1" class="btn btn-sm btn-action btn-outline-success" title="Print Token"><i class="bi bi-printer"></i></a>
                 <form action="/patients/<%= patient._id %>/delete" method="post" class="d-inline delete-form">

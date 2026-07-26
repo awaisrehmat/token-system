@@ -6,6 +6,8 @@ const router = express.Router();
 router.get('/', patientController.index);
 router.get('/new', patientController.newForm);
 router.post('/', patientController.create);
+router.get('/:id/history', patientController.history);
+router.post('/:id/revisit', patientController.revisit);
 router.get('/:id/edit', patientController.editForm);
 router.post('/:id/update', patientController.update);
 router.post('/:id/delete', patientController.remove);

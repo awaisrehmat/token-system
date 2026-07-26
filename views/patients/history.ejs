@@ -1,0 +1,73 @@
+<%- include('../partials/header') %>
+
+<div class="page-heading d-flex flex-wrap gap-3 justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 mb-1">Patient History</h1>
+    <p class="text-secondary mb-0"><strong><%= patient.mrNumber %></strong> · <%= patient.patientName %></p>
+  </div>
+  <a href="/patients" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Patient List</a>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card app-card">
+      <div class="card-header bg-white py-3">
+        <h2 class="h5 mb-0"><i class="bi bi-ticket-perforated me-2 text-primary"></i>Generate New Token</h2>
+      </div>
+      <div class="card-body">
+        <p class="small text-secondary">Creates a new visit using this patient's MR number and saved details.</p>
+        <form action="/patients/<%= patient._id %>/revisit" method="post">
+          <div class="mb-3">
+            <label for="consultant" class="form-label">Physician</label>
+            <select class="form-select" id="consultant" name="consultant" required>
+              <option value="">Select physician</option>
+              <% consultants.forEach((physician) => { %>
+                <option value="<%= physician._id %>" <%= String(patient.consultant?._id || patient.consultant) === String(physician._id) ? 'selected' : '' %>>
+                  <%= physician.name %> — <%= physician.specialization %>
+                </option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="patientType" class="form-label">Patient Type</label>
+            <input type="text" class="form-control" id="patientType" name="patientType" value="Follow-up" maxlength="60" required>
+          </div>
+          <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea class="form-control" id="description" name="description" rows="3" maxlength="1000"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary w-100"><i class="bi bi-printer me-1"></i> Generate & Print Token</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card app-card overflow-hidden">
+      <div class="card-header bg-white py-3">
+        <h2 class="h5 mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Previous Visits</h2>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr><th>Date</th><th>Token</th><th>Physician</th><th>Type</th><th>Description</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            <% visits.forEach((visit) => { %>
+              <tr>
+                <td class="text-nowrap"><%= formatDateTime(visit.createdAt) %></td>
+                <td><span class="badge text-bg-primary"><%= visit.tokenNumber %></span></td>
+                <td><%= visit.consultant ? visit.consultant.name : 'Deleted physician' %></td>
+                <td><%= visit.patientType %></td>
+                <td><%= visit.description || '—' %></td>
+                <td><a href="/patients/<%= visit._id %>/token" class="btn btn-sm btn-action btn-outline-secondary" title="View token"><i class="bi bi-eye"></i></a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

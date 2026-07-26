@@ -5,8 +5,6 @@ const patientSchema = new mongoose.Schema(
     mrNumber: {
       type: String,
       required: true,
-      unique: true,
-      sparse: true,
       match: [/^MR-\d{4}-\d{6}$/, 'Invalid MR number.']
     },
     patientName: { type: String, required: true, trim: true, maxlength: 100 },
@@ -33,5 +31,6 @@ const patientSchema = new mongoose.Schema(
 
 patientSchema.index({ tokenDate: 1, consultant: 1, tokenNumber: 1 }, { unique: true });
 patientSchema.index({ tokenDate: 1, createdAt: -1 });
+patientSchema.index({ mrNumber: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Patient', patientSchema);

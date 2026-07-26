@@ -165,6 +165,72 @@ exports.index = async (req, res, next) => {
   }
 };
 
+exports.history = async (req, res, next) => {
+  try {
+    const selectedPatient = await Patient.findById(req.params.id).lean();
+    if (!selectedPatient) {
+      return res.status(404).render('error', { title: 'Patient Not Found', pageMessage: 'Patient record not found.' });
+    }
+
+    const [visits, consultants] = await Promise.all([
+      Patient.find({ mrNumber: selectedPatient.mrNumber })
+        .populate('consultant')
+        .sort({ createdAt: -1 })
+        .lean(),
+      Consultant.find().sort({ name: 1 }).lean()
+    ]);
+
+    return res.render('patients/history', {
+      title: `History ${selectedPatient.mrNumber}`,
+      patient: visits[0] || selectedPatient,
+      visits,
+      consultants,
+      formatCnic,
+      formatDateTime
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.revisit = async (req, res, next) => {
+  try {
+    const previousVisit = await Patient.findById(req.params.id).lean();
+    if (!previousVisit) {
+      return res.status(404).render('error', { title: 'Patient Not Found', pageMessage: 'Patient record not found.' });
+    }
+
+    const physician = req.body.consultant;
+    if (!mongoose.isValidObjectId(physician) || !(await Consultant.exists({ _id: physician }))) {
+      return res.redirect(`/patients/${req.params.id}/history?error=${encodeURIComponent('Please select a valid physician.')}`);
+    }
+
+    const tokenDate = getClinicDate();
+    const tokenNumber = await availableGeneratedToken(tokenDate, physician);
+    const visit = await Patient.create({
+      mrNumber: previousVisit.mrNumber,
+      patientName: previousVisit.patientName,
+      age: previousVisit.age,
+      sex: previousVisit.sex,
+      cnic: previousVisit.cnic,
+      contactNumber: previousVisit.contactNumber,
+      address: previousVisit.address,
+      consultant: physician,
+      patientType: String(req.body.patientType || 'Follow-up').trim() || 'Follow-up',
+      description: String(req.body.description || '').trim(),
+      tokenNumber,
+      tokenDate
+    });
+
+    return res.redirect(`/patients/${visit._id}/token?message=${encodeURIComponent('Follow-up token generated successfully.')}`);
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.redirect(`/patients/${req.params.id}/history?error=${encodeURIComponent('A token conflict occurred. Please try again.')}`);
+    }
+    return next(error);
+  }
+};
+
 exports.newForm = async (req, res, next) => {
   try {
     const tokenDate = getClinicDate();

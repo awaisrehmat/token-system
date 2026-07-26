@@ -8,12 +8,21 @@ async function ensurePhysicianTokenIndex() {
   const MedicalRecordCounter = require('../models/MedicalRecordCounter');
   const indexes = await Patient.collection.indexes();
   const oldIndex = indexes.find((index) => index.name === 'tokenDate_1_tokenNumber_1');
+  const oldUniqueMrIndex = indexes.find((index) => index.name === 'mrNumber_1' && index.unique);
 
   if (oldIndex) {
     try {
       await Patient.collection.dropIndex(oldIndex.name);
     } catch (error) {
       // Another serverless instance may have completed the same migration.
+      if (error.codeName !== 'IndexNotFound' && error.code !== 27) throw error;
+    }
+  }
+
+  if (oldUniqueMrIndex) {
+    try {
+      await Patient.collection.dropIndex(oldUniqueMrIndex.name);
+    } catch (error) {
       if (error.codeName !== 'IndexNotFound' && error.code !== 27) throw error;
     }
   }
