@@ -114,10 +114,18 @@ dd {
 }
 
 @media print {
+  html {
+    width: 80mm;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   body {
     width: 80mm;
-    margin: 0;
-    padding: 0;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
     background: #fff;
   }
 
@@ -127,7 +135,7 @@ dd {
 
   .token-receipt {
     width: 80mm;
-    margin: 0;
-    padding: 2mm 4mm 3mm;
+    margin: 0 !important;
+    padding: 0 4mm 2mm !important;
   }
 }
