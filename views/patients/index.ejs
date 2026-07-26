@@ -59,6 +59,17 @@
               <div class="d-flex flex-wrap gap-1">
                 <a href="/patients/<%= patient._id %>/token" class="btn btn-sm btn-action btn-outline-secondary" title="View"><i class="bi bi-eye"></i></a>
                 <a href="/patients/<%= patient._id %>/history" class="btn btn-sm btn-action btn-outline-dark" title="Patient History"><i class="bi bi-clock-history"></i></a>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-success text-nowrap new-token-button"
+                  title="Generate New Token"
+                  data-bs-toggle="modal"
+                  data-bs-target="#newTokenModal"
+                  data-patient-id="<%= patient._id %>"
+                  data-patient-name="<%= patient.patientName %>"
+                  data-mr-number="<%= patient.mrNumber %>"
+                  data-physician-id="<%= patient.consultant ? patient.consultant._id : '' %>"
+                ><i class="bi bi-ticket-perforated me-1"></i>New Token</button>
                 <a href="/patients/<%= patient._id %>/edit" class="btn btn-sm btn-action btn-outline-primary" title="Edit"><i class="bi bi-pencil"></i></a>
                 <a href="/patients/<%= patient._id %>/token?print=1" class="btn btn-sm btn-action btn-outline-success" title="Print Token"><i class="bi bi-printer"></i></a>
                 <form action="/patients/<%= patient._id %>/delete" method="post" class="d-inline delete-form">
@@ -85,6 +96,45 @@
       </nav>
     </div>
   <% } %>
+</div>
+
+<div class="modal fade" id="newTokenModal" tabindex="-1" aria-labelledby="newTokenModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="newTokenForm" action="" method="post">
+        <div class="modal-header">
+          <div>
+            <h2 class="modal-title fs-5" id="newTokenModalLabel">Generate New Token</h2>
+            <p class="small text-secondary mb-0" id="newTokenPatient"></p>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="repeatConsultant" class="form-label">Physician</label>
+            <select class="form-select" id="repeatConsultant" name="consultant" required>
+              <option value="">Select physician</option>
+              <% consultants.forEach((physician) => { %>
+                <option value="<%= physician._id %>"><%= physician.name %> — <%= physician.specialization %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="repeatPatientType" class="form-label">Patient Type</label>
+            <input type="text" class="form-control" id="repeatPatientType" name="patientType" maxlength="60" value="Follow-up" required>
+          </div>
+          <div>
+            <label for="repeatDescription" class="form-label">Description</label>
+            <textarea class="form-control" id="repeatDescription" name="description" rows="3" maxlength="1000"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-printer me-1"></i> Generate & Print</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <%- include('../partials/footer') %>

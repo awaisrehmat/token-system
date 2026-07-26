@@ -20,6 +20,22 @@ if (cnicInput) {
   formatCnic();
 }
 
+document.querySelectorAll('.new-token-button').forEach((button) => {
+  button.addEventListener('click', () => {
+    const form = document.querySelector('#newTokenForm');
+    const patientLabel = document.querySelector('#newTokenPatient');
+    const physicianSelect = document.querySelector('#repeatConsultant');
+    const description = document.querySelector('#repeatDescription');
+    const patientType = document.querySelector('#repeatPatientType');
+
+    form.action = `/patients/${button.dataset.patientId}/revisit`;
+    patientLabel.textContent = `${button.dataset.mrNumber} · ${button.dataset.patientName}`;
+    physicianSelect.value = button.dataset.physicianId || '';
+    patientType.value = 'Follow-up';
+    description.value = '';
+  });
+});
+
 document.querySelectorAll('form[method="post"]').forEach((form) => {
   form.addEventListener('submit', (event) => {
     if (event.defaultPrevented) return;

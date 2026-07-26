@@ -141,14 +141,15 @@ exports.index = async (req, res, next) => {
       if (cnicDigits) query.$or.push({ cnic: { $regex: escapeRegex(cnicDigits) } });
     }
 
-    const [patients, total] = await Promise.all([
+    const [patients, total, consultants] = await Promise.all([
       Patient.find(query)
         .populate('consultant')
         .sort({ tokenDate: -1, createdAt: -1 })
         .skip((page - 1) * PAGE_SIZE)
         .limit(PAGE_SIZE)
         .lean(),
-      Patient.countDocuments(query)
+      Patient.countDocuments(query),
+      Consultant.find().sort({ name: 1 }).lean()
     ]);
 
     res.render('patients/index', {
@@ -158,6 +159,7 @@ exports.index = async (req, res, next) => {
       date,
       page,
       totalPages: Math.max(Math.ceil(total / PAGE_SIZE), 1),
+      consultants,
       formatCnic
     });
   } catch (error) {
@@ -195,10 +197,13 @@ exports.history = async (req, res, next) => {
 
 exports.revisit = async (req, res, next) => {
   try {
-    const previousVisit = await Patient.findById(req.params.id).lean();
-    if (!previousVisit) {
+    const selectedVisit = await Patient.findById(req.params.id).lean();
+    if (!selectedVisit) {
       return res.status(404).render('error', { title: 'Patient Not Found', pageMessage: 'Patient record not found.' });
     }
+    const previousVisit = await Patient.findOne({ mrNumber: selectedVisit.mrNumber })
+      .sort({ createdAt: -1 })
+      .lean();
 
     const physician = req.body.consultant;
     if (!mongoose.isValidObjectId(physician) || !(await Consultant.exists({ _id: physician }))) {
@@ -222,7 +227,7 @@ exports.revisit = async (req, res, next) => {
       tokenDate
     });
 
-    return res.redirect(`/patients/${visit._id}/token?message=${encodeURIComponent('Follow-up token generated successfully.')}`);
+    return res.redirect(`/patients/${visit._id}/token?print=1&message=${encodeURIComponent('Follow-up token generated successfully.')}`);
   } catch (error) {
     if (error.code === 11000) {
       return res.redirect(`/patients/${req.params.id}/history?error=${encodeURIComponent('A token conflict occurred. Please try again.')}`);
