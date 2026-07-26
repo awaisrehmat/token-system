@@ -23,6 +23,13 @@
   </div>
   <div class="card-body p-4">
     <form action="<%= isEdit ? `/patients/${patient._id}/update` : '/patients' %>" method="post" class="row g-3" novalidate>
+      <% if (isEdit) { %>
+        <div class="col-12">
+          <label class="form-label">Medical Record Number</label>
+          <input type="text" class="form-control" value="<%= patient.mrNumber || '' %>" disabled>
+          <div class="form-text">This permanent number is generated automatically and cannot be changed.</div>
+        </div>
+      <% } %>
       <div class="col-md-6">
         <label for="patientName" class="form-label">Patient Name</label>
         <input type="text" class="form-control" id="patientName" name="patientName" maxlength="100" value="<%= patient.patientName || '' %>" required>

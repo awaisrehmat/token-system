@@ -5,6 +5,7 @@ A minimal receptionist-facing token system built with Node.js, Express, MongoDB 
 ## Features
 
 - Fully automatic daily token numbers reset to `001`
+- Unique yearly medical record numbers such as `MR-2026-000001`
 - Atomic daily counters and duplicate-token protection
 - Patient registration, search, date filtering, pagination, editing, and deletion
 - Physician management and quick physician creation from the patient form
@@ -77,5 +78,6 @@ The application name in the navbar, login page, footer, browser title, and print
 - CNIC values are stored as 13-digit strings and displayed with dashes.
 - Token numbers are generated automatically and cannot be edited by users.
 - Every physician has an independent daily token sequence beginning at `001`.
-- The patient-list search checks patient name, CNIC, contact number, token number, physician name, and address.
+- MR numbers are permanent, system-generated, and reset to sequence `000001` each year.
+- The patient-list search checks MR number, patient name, CNIC, contact number, token number, physician name, and address.
 - For an 80mm printer, choose the printer's 80mm paper size and disable browser headers and footers in the print dialog.

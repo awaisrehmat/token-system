@@ -2,6 +2,13 @@ const mongoose = require('mongoose');
 
 const patientSchema = new mongoose.Schema(
   {
+    mrNumber: {
+      type: String,
+      required: true,
+      unique: true,
+      sparse: true,
+      match: [/^MR-\d{4}-\d{6}$/, 'Invalid MR number.']
+    },
     patientName: { type: String, required: true, trim: true, maxlength: 100 },
     age: { type: Number, required: true, min: 0, max: 130 },
     sex: { type: String, required: true, enum: ['Male', 'Female', 'Other'] },

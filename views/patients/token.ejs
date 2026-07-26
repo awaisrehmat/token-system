@@ -24,6 +24,7 @@
     <div class="token-number"><%= patient.tokenNumber %></div>
     <div class="divider"></div>
     <dl>
+      <div><dt>MR Number</dt><dd><%= patient.mrNumber %></dd></div>
       <div><dt>Patient</dt><dd><%= patient.patientName %></dd></div>
       <div><dt>Age / Sex</dt><dd><%= patient.age %> / <%= patient.sex %></dd></div>
       <div><dt>CNIC</dt><dd><%= formatCnic(patient.cnic) %></dd></div>

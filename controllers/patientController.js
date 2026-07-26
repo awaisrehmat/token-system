@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Patient = require('../models/Patient');
 const Consultant = require('../models/Consultant');
 const DailyCounter = require('../models/DailyCounter');
+const MedicalRecordCounter = require('../models/MedicalRecordCounter');
 const PrintSetting = require('../models/PrintSetting');
 const {
   getClinicDate,
@@ -13,6 +14,25 @@ const {
 } = require('../utils/helpers');
 
 const PAGE_SIZE = 10;
+
+async function nextMrNumber(year) {
+  let counter;
+  try {
+    counter = await MedicalRecordCounter.findOneAndUpdate(
+      { year },
+      { $inc: { sequence: 1 } },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+  } catch (error) {
+    if (error.code !== 11000) throw error;
+    counter = await MedicalRecordCounter.findOneAndUpdate(
+      { year },
+      { $inc: { sequence: 1 } },
+      { new: true }
+    );
+  }
+  return `MR-${year}-${String(counter.sequence).padStart(6, '0')}`;
+}
 
 function patientValues(body = {}) {
   return {
@@ -111,6 +131,7 @@ exports.index = async (req, res, next) => {
       const cnicDigits = normalizeCnic(search);
       const consultantIds = await Consultant.find({ name: { $regex: safeSearch, $options: 'i' } }).distinct('_id');
       query.$or = [
+        { mrNumber: { $regex: safeSearch, $options: 'i' } },
         { patientName: { $regex: safeSearch, $options: 'i' } },
         { contactNumber: { $regex: safeSearch, $options: 'i' } },
         { tokenNumber: { $regex: safeSearch, $options: 'i' } },
@@ -182,6 +203,7 @@ exports.create = async (req, res, next) => {
       });
     }
 
+    data.mrNumber = await nextMrNumber(Number(data.tokenDate.slice(0, 4)));
     data.tokenNumber = await availableGeneratedToken(data.tokenDate, data.consultant);
 
     const patient = await Patient.create(data);
@@ -189,11 +211,14 @@ exports.create = async (req, res, next) => {
   } catch (error) {
     if (error.code === 11000) {
       const consultants = await Consultant.find().sort({ name: 1 }).lean();
+      const conflictMessage = error.keyPattern?.mrNumber
+        ? 'An MR-number conflict occurred. Please submit the form again.'
+        : 'A token-number conflict occurred. Please submit the form again to generate a new token.';
       return res.status(409).render('patients/form', {
         title: 'Register Patient',
         patient: data,
         consultants,
-        errors: ['A token-number conflict occurred. Please submit the form again to generate a new token.'],
+        errors: [conflictMessage],
         isEdit: false
       });
     }
@@ -224,11 +249,12 @@ exports.editForm = async (req, res, next) => {
 exports.update = async (req, res, next) => {
   const data = patientValues(req.body);
   try {
-    const existingPatient = await Patient.findById(req.params.id).select('tokenNumber').lean();
+    const existingPatient = await Patient.findById(req.params.id).select('tokenNumber mrNumber').lean();
     if (!existingPatient) {
       return res.status(404).render('error', { title: 'Patient Not Found', pageMessage: 'Patient record not found.' });
     }
     data.tokenNumber = existingPatient.tokenNumber;
+    data.mrNumber = existingPatient.mrNumber;
 
     const errors = validatePatient(data);
     const consultantExists = mongoose.isValidObjectId(data.consultant)

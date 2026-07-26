@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "check": "node --check app.js && node --check middleware/auth.js && node --check public/js/main.js && node --check controllers/patientController.js && node --check controllers/consultantController.js && node --check routes/patientRoutes.js && node --check routes/consultantRoutes.js && node --check models/PrintSetting.js"
+    "check": "node --check app.js && node --check middleware/auth.js && node --check public/js/main.js && node --check controllers/patientController.js && node --check controllers/consultantController.js && node --check routes/patientRoutes.js && node --check routes/consultantRoutes.js && node --check models/PrintSetting.js && node --check models/MedicalRecordCounter.js"
   },
   "engines": {
     "node": ">=18"

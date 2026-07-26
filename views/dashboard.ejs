@@ -29,14 +29,15 @@
   <div class="table-responsive">
     <table class="table table-hover align-middle mb-0">
       <thead class="table-light">
-        <tr><th>Token</th><th>Patient</th><th>CNIC</th><th>Physician</th><th>Date</th></tr>
+        <tr><th>MR Number</th><th>Token</th><th>Patient</th><th>CNIC</th><th>Physician</th><th>Date</th></tr>
       </thead>
       <tbody>
         <% if (!recentPatients.length) { %>
-          <tr><td colspan="5" class="text-center text-secondary py-4">No patients registered yet.</td></tr>
+          <tr><td colspan="6" class="text-center text-secondary py-4">No patients registered yet.</td></tr>
         <% } %>
         <% recentPatients.forEach((patient) => { %>
           <tr>
+            <td class="text-nowrap fw-semibold"><%= patient.mrNumber %></td>
             <td><span class="badge text-bg-primary fs-6"><%= patient.tokenNumber %></span></td>
             <td><%= patient.patientName %></td>
             <td><%= formatCnic(patient.cnic) %></td>
