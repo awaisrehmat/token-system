@@ -15,7 +15,7 @@
         <label for="search" class="visually-hidden">Search patients</label>
         <div class="input-group">
           <span class="input-group-text bg-white"><i class="bi bi-search text-secondary"></i></span>
-          <input type="search" class="form-control border-start-0 ps-0" id="search" name="search" value="<%= search %>" placeholder="Search MR number, name, CNIC, contact, token, physician, or address">
+          <input type="search" class="form-control border-start-0 ps-0" id="search" name="search" value="<%= search %>" placeholder="Search MR number, patient/relative name, CNIC, contact, token, physician, or address">
         </div>
       </div>
       <div class="col-sm-6 col-lg-3">
@@ -47,7 +47,12 @@
           <tr>
             <td class="text-nowrap fw-semibold"><%= patient.mrNumber %></td>
             <td><span class="badge text-bg-primary fs-6"><%= patient.tokenNumber %></span></td>
-            <td class="fw-medium"><%= patient.patientName %></td>
+            <td class="fw-medium">
+              <%= patient.patientName %>
+              <% if (patient.relationType && patient.relativeName) { %>
+                <div class="small text-secondary"><%= patient.relationType %> <%= patient.relativeName %></div>
+              <% } %>
+            </td>
             <td><%= patient.age %></td>
             <td><%= patient.sex %></td>
             <td class="text-nowrap"><%= formatCnic(patient.cnic) %></td>

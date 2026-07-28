@@ -37,6 +37,8 @@ async function nextMrNumber(year) {
 function patientValues(body = {}) {
   return {
     patientName: String(body.patientName || '').trim(),
+    relationType: String(body.relationType || '').trim().toUpperCase(),
+    relativeName: String(body.relativeName || '').trim(),
     age: body.age,
     sex: body.sex,
     cnic: normalizeCnic(body.cnic),
@@ -52,6 +54,8 @@ function patientValues(body = {}) {
 function validatePatient(data) {
   const errors = [];
   if (!data.patientName) errors.push('Patient name is required.');
+  if (!['S/O', 'W/O', 'D/O'].includes(data.relationType)) errors.push('Please select S/O, W/O, or D/O.');
+  if (!data.relativeName) errors.push('Father or husband name is required.');
   if (data.age === '' || Number.isNaN(Number(data.age)) || Number(data.age) < 0 || Number(data.age) > 130) {
     errors.push('Age must be between 0 and 130.');
   }
@@ -133,6 +137,7 @@ exports.index = async (req, res, next) => {
       query.$or = [
         { mrNumber: { $regex: safeSearch, $options: 'i' } },
         { patientName: { $regex: safeSearch, $options: 'i' } },
+        { relativeName: { $regex: safeSearch, $options: 'i' } },
         { contactNumber: { $regex: safeSearch, $options: 'i' } },
         { tokenNumber: { $regex: safeSearch, $options: 'i' } },
         { address: { $regex: safeSearch, $options: 'i' } },
@@ -217,6 +222,8 @@ exports.revisit = async (req, res, next) => {
     const visit = await Patient.create({
       mrNumber: previousVisit.mrNumber,
       patientName: previousVisit.patientName,
+      relationType: previousVisit.relationType || '',
+      relativeName: previousVisit.relativeName || '',
       age: previousVisit.age,
       sex: previousVisit.sex,
       cnic: previousVisit.cnic,

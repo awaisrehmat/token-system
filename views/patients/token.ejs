@@ -26,6 +26,9 @@
     <div class="divider"></div>
     <dl>
       <div><dt>Patient</dt><dd><%= patient.patientName %></dd></div>
+      <% if (patient.relationType && patient.relativeName) { %>
+        <div><dt><%= patient.relationType %></dt><dd><%= patient.relativeName %></dd></div>
+      <% } %>
       <div><dt>Age / Sex</dt><dd><%= patient.age %> / <%= patient.sex %></dd></div>
       <div><dt>CNIC</dt><dd><%= formatCnic(patient.cnic) %></dd></div>
       <div><dt>Phone</dt><dd><%= patient.contactNumber %></dd></div>

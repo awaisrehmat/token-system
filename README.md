@@ -6,6 +6,7 @@ A minimal receptionist-facing token system built with Node.js, Express, MongoDB 
 
 - Fully automatic daily token numbers reset to `001`
 - Unique yearly medical record numbers such as `MR-2026-000001`
+- Patient relationship details using S/O, W/O, or D/O
 - Complete visit history grouped by permanent MR number
 - Follow-up token generation from an existing patient's MR history
 - Atomic daily counters and duplicate-token protection

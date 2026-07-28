@@ -3,7 +3,10 @@
 <div class="page-heading d-flex flex-wrap gap-3 justify-content-between align-items-center mb-4">
   <div>
     <h1 class="h3 mb-1">Patient History</h1>
-    <p class="text-secondary mb-0"><strong><%= patient.mrNumber %></strong> · <%= patient.patientName %></p>
+    <p class="text-secondary mb-0">
+      <strong><%= patient.mrNumber %></strong> · <%= patient.patientName %>
+      <% if (patient.relationType && patient.relativeName) { %> · <%= patient.relationType %> <%= patient.relativeName %><% } %>
+    </p>
   </div>
   <a href="/patients" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Patient List</a>
 </div>

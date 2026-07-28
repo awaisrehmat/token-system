@@ -34,6 +34,19 @@
         <label for="patientName" class="form-label">Patient Name</label>
         <input type="text" class="form-control" id="patientName" name="patientName" maxlength="100" value="<%= patient.patientName || '' %>" required>
       </div>
+      <div class="col-md-2">
+        <label for="relationType" class="form-label">Relation</label>
+        <select class="form-select" id="relationType" name="relationType" required>
+          <option value="">Select</option>
+          <% ['S/O', 'W/O', 'D/O'].forEach((relation) => { %>
+            <option value="<%= relation %>" <%= patient.relationType === relation ? 'selected' : '' %>><%= relation %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label for="relativeName" class="form-label">Father / Husband Name</label>
+        <input type="text" class="form-control" id="relativeName" name="relativeName" maxlength="100" value="<%= patient.relativeName || '' %>" required>
+      </div>
       <div class="col-md-3">
         <label for="age" class="form-label">Age</label>
         <input type="number" class="form-control" id="age" name="age" min="0" max="130" value="<%= patient.age ?? '' %>" required>
