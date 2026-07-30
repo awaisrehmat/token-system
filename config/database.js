@@ -6,7 +6,14 @@ async function ensurePhysicianTokenIndex() {
   const Patient = require('../models/Patient');
   const DailyCounter = require('../models/DailyCounter');
   const MedicalRecordCounter = require('../models/MedicalRecordCounter');
-  const indexes = await Patient.collection.indexes();
+  let indexes = [];
+  try {
+    indexes = await Patient.collection.indexes();
+  } catch (error) {
+    // A fresh database has no patients namespace until its collection or first
+    // index is created. In that case there are no legacy indexes to migrate.
+    if (error.codeName !== 'NamespaceNotFound' && error.code !== 26) throw error;
+  }
   const oldIndex = indexes.find((index) => index.name === 'tokenDate_1_tokenNumber_1');
   const oldUniqueMrIndex = indexes.find((index) => index.name === 'mrNumber_1' && index.unique);
 

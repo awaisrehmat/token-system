@@ -8,6 +8,7 @@ const connectDatabase = require('./config/database');
 const PrintSetting = require('./models/PrintSetting');
 const patientRoutes = require('./routes/patientRoutes');
 const consultantRoutes = require('./routes/consultantRoutes');
+const inventoryRoutes = require('./routes/inventoryRoutes');
 const { dashboard } = require('./controllers/patientController');
 const { requireAuth, showLogin, login, logout } = require('./middleware/auth');
 
@@ -84,6 +85,7 @@ app.post('/logout', logout);
 app.get('/', dashboard);
 app.use('/patients', patientRoutes);
 app.use('/consultants', consultantRoutes);
+app.use('/inventory', inventoryRoutes);
 
 app.use((req, res) => {
   res.status(404).render('error', {

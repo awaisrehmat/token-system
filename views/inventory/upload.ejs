@@ -1,0 +1,74 @@
+<%- include('../partials/header') %>
+
+<div class="page-heading d-flex flex-wrap gap-3 justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 mb-1">Upload Medicines</h1>
+    <p class="text-secondary mb-0">Add stock in bulk from a CSV file</p>
+  </div>
+  <a href="/inventory/upload/template" class="btn btn-outline-primary">
+    <i class="bi bi-download me-1"></i> Download Template
+  </a>
+</div>
+
+<% if (typeof importErrors !== 'undefined' && importErrors.length) { %>
+  <div class="alert alert-danger app-alert">
+    <div class="fw-semibold mb-2">The file was not imported. Please correct these rows:</div>
+    <ul class="mb-0">
+      <% importErrors.forEach((error) => { %>
+        <li><%= error %></li>
+      <% }) %>
+    </ul>
+  </div>
+<% } %>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card app-card">
+      <div class="card-body p-4">
+        <form action="/inventory/upload" method="post" enctype="multipart/form-data">
+          <label for="medicineFile" class="upload-dropzone">
+            <span class="upload-icon"><i class="bi bi-cloud-arrow-up"></i></span>
+            <span class="h5 mb-1">Choose a medicine CSV file</span>
+            <span class="text-secondary">Maximum file size: 2 MB</span>
+            <input
+              class="visually-hidden"
+              type="file"
+              id="medicineFile"
+              name="medicineFile"
+              accept=".csv,text/csv"
+              required
+            >
+            <span class="btn btn-outline-primary mt-3">Browse File</span>
+            <span id="selectedFile" class="small fw-semibold mt-2"></span>
+          </label>
+
+          <div class="mt-4">
+            <p class="form-label mb-2">Required columns</p>
+            <div class="d-flex flex-wrap gap-2">
+              <% ['medicine_name', 'batch_number', 'expiry_date', 'quantity', 'purchase_price', 'retail_price'].forEach((column) => { %>
+                <span class="badge upload-column"><%= column %></span>
+              <% }) %>
+            </div>
+            <p class="form-text mt-2 mb-0">
+              Expiry dates must use YYYY-MM-DD. Existing matching batches receive the uploaded quantity as new stock-in.
+            </p>
+          </div>
+
+          <div class="d-flex justify-content-end mt-4">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-upload me-1"></i> Upload Medicines
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('medicineFile').addEventListener('change', function () {
+    document.getElementById('selectedFile').textContent = this.files[0]?.name || '';
+  });
+</script>
+
+<%- include('../partials/footer') %>

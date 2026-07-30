@@ -221,6 +221,46 @@ main.container {
   font-size: 0.76rem;
 }
 
+.upload-dropzone {
+  display: flex;
+  min-height: 18rem;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #bfdbfe;
+  border-radius: 1rem;
+  background: #f8fbff;
+  cursor: pointer;
+  flex-direction: column;
+  padding: 2rem;
+  text-align: center;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.upload-dropzone:hover {
+  border-color: var(--app-primary);
+  background: #eff6ff;
+}
+
+.upload-icon {
+  display: grid;
+  width: 4rem;
+  height: 4rem;
+  margin-bottom: 1rem;
+  place-items: center;
+  border-radius: 1rem;
+  background: #dbeafe;
+  color: var(--app-primary);
+  font-size: 1.75rem;
+}
+
+.upload-column {
+  border: 1px solid #dbe3ee;
+  background: #f8fafc;
+  color: #475569;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 600;
+}
+
 .table {
   --bs-table-hover-bg: #f8fafc;
 }
