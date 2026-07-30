@@ -123,6 +123,39 @@ exports.showSale = async (req, res, next) => {
   }
 };
 
+exports.salesIndex = async (req, res, next) => {
+  try {
+    const search = String(req.query.search || '').trim();
+    const safeSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const query = search
+      ? {
+          $or: [
+            { invoiceNumber: { $regex: safeSearch, $options: 'i' } },
+            { customerName: { $regex: safeSearch, $options: 'i' } },
+            { 'items.medicineName': { $regex: safeSearch, $options: 'i' } }
+          ]
+        }
+      : {};
+
+    const sales = await Sale.find(query).sort({ createdAt: -1 }).lean();
+    const summary = sales.reduce((totals, sale) => {
+      totals.count += 1;
+      totals.amount += sale.grandTotal;
+      totals.discount += sale.discountAmount;
+      return totals;
+    }, { count: 0, amount: 0, discount: 0 });
+
+    res.render('inventory/sales', {
+      title: 'Medicine Sales',
+      sales,
+      search,
+      summary
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 function saleItems(body) {
   const rawItems = Array.isArray(body.items)
     ? body.items
@@ -278,7 +311,7 @@ exports.createSale = async (req, res, next) => {
       throw error;
     }
 
-    return res.redirect(`/inventory?message=${encodeURIComponent(`Sale ${invoiceNumber} completed successfully.`)}`);
+    return res.redirect(`/inventory/sales?message=${encodeURIComponent(`Sale ${invoiceNumber} completed successfully.`)}`);
   } catch (error) {
     if (error.message.includes('stock changed during the sale')) {
       return res.status(409).render('inventory/sale', {

@@ -15,6 +15,7 @@ const upload = multer({
 });
 
 router.get('/', inventoryController.index);
+router.get('/sales', inventoryController.salesIndex);
 router.get('/sale', inventoryController.showSale);
 router.post('/sale', inventoryController.createSale);
 router.get('/upload', inventoryController.showUpload);

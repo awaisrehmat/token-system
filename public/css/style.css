@@ -130,6 +130,11 @@ main.container {
   --metric-soft: #fef2f2;
 }
 
+.metric-card-discount {
+  --metric-color: #d97706;
+  --metric-soft: #fffbeb;
+}
+
 .metric-card .card-body {
   padding: 1.6rem;
 }
