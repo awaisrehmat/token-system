@@ -156,6 +156,14 @@ main.container {
   width: min(100%, 28rem);
 }
 
+.sale-line-total {
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  color: #0f172a;
+  font-weight: 700;
+}
+
 .metric-icon {
   display: grid;
   width: 3.5rem;

@@ -1,0 +1,170 @@
+<%- include('../partials/header') %>
+
+<div class="page-heading d-flex flex-wrap gap-3 justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 mb-1">New Medicine Sale</h1>
+    <p class="text-secondary mb-0">Stock is deducted from the earliest-expiring batch</p>
+  </div>
+  <a href="/inventory" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Inventory
+  </a>
+</div>
+
+<% if (errors.length) { %>
+  <div class="alert alert-danger app-alert">
+    <ul class="mb-0">
+      <% errors.forEach((error) => { %><li><%= error %></li><% }) %>
+    </ul>
+  </div>
+<% } %>
+
+<form action="/inventory/sale" method="post" id="saleForm">
+  <div class="card app-card mb-4">
+    <div class="card-body p-4">
+      <div class="row">
+        <div class="col-md-6">
+          <label for="customerName" class="form-label">Customer name <span class="text-secondary fw-normal">(optional)</span></label>
+          <input
+            type="text"
+            class="form-control"
+            id="customerName"
+            name="customerName"
+            maxlength="100"
+            value="<%= form.customerName || '' %>"
+            placeholder="Walk-in customer"
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card app-card">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+      <h2 class="h5 mb-0"><i class="bi bi-cart3 me-2 text-primary"></i>Sale Items</h2>
+      <button type="button" class="btn btn-outline-primary btn-sm" id="addItem">
+        <i class="bi bi-plus-lg me-1"></i> Add Medicine
+      </button>
+    </div>
+    <div class="card-body p-0">
+      <div id="saleItems">
+        <% (form.items.length ? form.items : [{}]).forEach((item, index) => { %>
+          <div class="sale-item-row border-bottom p-3" data-index="<%= index %>">
+            <div class="row g-3 align-items-end">
+              <div class="col-lg-5">
+                <label class="form-label">Medicine</label>
+                <select class="form-select medicine-select" name="items[<%= index %>][medicineName]" required>
+                  <option value="">Select medicine</option>
+                  <% medicines.forEach((medicine) => { %>
+                    <option
+                      value="<%= medicine._id %>"
+                      data-price="<%= medicine.retailPrice %>"
+                      data-stock="<%= medicine.availableQuantity %>"
+                      <%= item.medicineName === medicine._id ? 'selected' : '' %>
+                    >
+                      <%= medicine._id %> — Stock: <%= medicine.availableQuantity %>
+                    </option>
+                  <% }) %>
+                </select>
+                <div class="form-text medicine-info"></div>
+              </div>
+              <div class="col-sm-4 col-lg-2">
+                <label class="form-label">Quantity</label>
+                <input class="form-control quantity-input" type="number" min="0.01" step="0.01" name="items[<%= index %>][quantity]" value="<%= item.quantity || 1 %>" required>
+              </div>
+              <div class="col-sm-4 col-lg-2">
+                <label class="form-label">Discount %</label>
+                <input class="form-control discount-input" type="number" min="0" max="100" step="0.01" name="items[<%= index %>][discountPercent]" value="<%= item.discountPercent || 0 %>">
+              </div>
+              <div class="col-sm-3 col-lg-2">
+                <label class="form-label">Estimated total</label>
+                <div class="sale-line-total">Rs. 0.00</div>
+              </div>
+              <div class="col-sm-1 col-lg-1 text-end">
+                <button type="button" class="btn btn-outline-danger btn-action remove-item" aria-label="Remove item">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 p-4">
+        <p class="text-secondary small mb-0">Final totals use the retail price of each FEFO batch.</p>
+        <div class="text-end">
+          <div class="text-secondary small">Estimated grand total</div>
+          <div class="h4 mb-3" id="grandTotal">Rs. 0.00</div>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check2-circle me-1"></i> Complete Sale
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+<template id="saleItemTemplate">
+  <div class="sale-item-row border-bottom p-3">
+    <div class="row g-3 align-items-end">
+      <div class="col-lg-5">
+        <label class="form-label">Medicine</label>
+        <select class="form-select medicine-select" required>
+          <option value="">Select medicine</option>
+          <% medicines.forEach((medicine) => { %>
+            <option value="<%= medicine._id %>" data-price="<%= medicine.retailPrice %>" data-stock="<%= medicine.availableQuantity %>"><%= medicine._id %> — Stock: <%= medicine.availableQuantity %></option>
+          <% }) %>
+        </select>
+        <div class="form-text medicine-info"></div>
+      </div>
+      <div class="col-sm-4 col-lg-2"><label class="form-label">Quantity</label><input class="form-control quantity-input" type="number" min="0.01" step="0.01" value="1" required></div>
+      <div class="col-sm-4 col-lg-2"><label class="form-label">Discount %</label><input class="form-control discount-input" type="number" min="0" max="100" step="0.01" value="0"></div>
+      <div class="col-sm-3 col-lg-2"><label class="form-label">Estimated total</label><div class="sale-line-total">Rs. 0.00</div></div>
+      <div class="col-sm-1 col-lg-1 text-end"><button type="button" class="btn btn-outline-danger btn-action remove-item" aria-label="Remove item"><i class="bi bi-trash"></i></button></div>
+    </div>
+  </div>
+</template>
+
+<script>
+  const container = document.getElementById('saleItems');
+
+  function refreshRows() {
+    const rows = [...container.querySelectorAll('.sale-item-row')];
+    let grandTotal = 0;
+    rows.forEach((row, index) => {
+      row.dataset.index = index;
+      row.querySelector('.medicine-select').name = `items[${index}][medicineName]`;
+      row.querySelector('.quantity-input').name = `items[${index}][quantity]`;
+      row.querySelector('.discount-input').name = `items[${index}][discountPercent]`;
+
+      const option = row.querySelector('.medicine-select').selectedOptions[0];
+      const price = Number(option?.dataset.price || 0);
+      const stock = Number(option?.dataset.stock || 0);
+      const quantity = Number(row.querySelector('.quantity-input').value || 0);
+      const discount = Number(row.querySelector('.discount-input').value || 0);
+      const total = Math.max(0, quantity * price * (1 - discount / 100));
+      row.querySelector('.medicine-info').textContent = option?.value
+        ? `Retail price: Rs. ${price.toFixed(2)} · Available: ${stock}`
+        : '';
+      row.querySelector('.sale-line-total').textContent = `Rs. ${total.toFixed(2)}`;
+      grandTotal += total;
+      row.querySelector('.remove-item').disabled = rows.length === 1;
+    });
+    document.getElementById('grandTotal').textContent = `Rs. ${grandTotal.toFixed(2)}`;
+  }
+
+  document.getElementById('addItem').addEventListener('click', () => {
+    container.appendChild(document.getElementById('saleItemTemplate').content.cloneNode(true));
+    refreshRows();
+  });
+  container.addEventListener('input', refreshRows);
+  container.addEventListener('change', refreshRows);
+  container.addEventListener('click', (event) => {
+    const button = event.target.closest('.remove-item');
+    if (button && container.querySelectorAll('.sale-item-row').length > 1) {
+      button.closest('.sale-item-row').remove();
+      refreshRows();
+    }
+  });
+  refreshRows();
+</script>
+
+<%- include('../partials/footer') %>

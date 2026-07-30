@@ -15,6 +15,8 @@ const upload = multer({
 });
 
 router.get('/', inventoryController.index);
+router.get('/sale', inventoryController.showSale);
+router.post('/sale', inventoryController.createSale);
 router.get('/upload', inventoryController.showUpload);
 router.get('/upload/template', inventoryController.downloadTemplate);
 router.post('/upload', upload.single('medicineFile'), inventoryController.uploadMedicines);

@@ -1,5 +1,6 @@
 const MedicineBatch = require('../models/MedicineBatch');
 const StockTransaction = require('../models/StockTransaction');
+const Sale = require('../models/Sale');
 
 const REQUIRED_HEADERS = [
   'medicine_name',
@@ -88,6 +89,207 @@ function normalizeHeader(value) {
 
 exports.showUpload = (req, res) => {
   res.render('inventory/upload', { title: 'Upload Medicines' });
+};
+
+async function availableMedicines() {
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+
+  return MedicineBatch.aggregate([
+    { $match: { quantity: { $gt: 0 }, expiryDate: { $gte: today } } },
+    { $sort: { expiryDate: 1 } },
+    {
+      $group: {
+        _id: '$medicineName',
+        availableQuantity: { $sum: '$quantity' },
+        retailPrice: { $first: '$retailPrice' },
+        nextExpiry: { $first: '$expiryDate' }
+      }
+    },
+    { $sort: { _id: 1 } }
+  ]);
+}
+
+exports.showSale = async (req, res, next) => {
+  try {
+    res.render('inventory/sale', {
+      title: 'New Medicine Sale',
+      medicines: await availableMedicines(),
+      form: { customerName: '', items: [{}] },
+      errors: []
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+function saleItems(body) {
+  const rawItems = Array.isArray(body.items)
+    ? body.items
+    : Object.values(body.items || {});
+
+  return rawItems
+    .map((item) => ({
+      medicineName: String(item.medicineName || '').trim(),
+      quantity: Number(item.quantity),
+      discountPercent: Number(item.discountPercent || 0)
+    }))
+    .filter((item) => item.medicineName || Number.isFinite(item.quantity));
+}
+
+function createInvoiceNumber() {
+  const now = new Date();
+  const timestamp = now.toISOString().replace(/\D/g, '').slice(0, 14);
+  const suffix = Math.floor(Math.random() * 9000 + 1000);
+  return `SALE-${timestamp}-${suffix}`;
+}
+
+exports.createSale = async (req, res, next) => {
+  const items = saleItems(req.body);
+  const form = {
+    customerName: String(req.body.customerName || '').trim(),
+    items
+  };
+  const errors = [];
+
+  if (!items.length) errors.push('Add at least one medicine.');
+  for (const [index, item] of items.entries()) {
+    if (!item.medicineName) errors.push(`Item ${index + 1}: select a medicine.`);
+    if (!Number.isFinite(item.quantity) || item.quantity <= 0) {
+      errors.push(`Item ${index + 1}: quantity must be greater than zero.`);
+    }
+    if (!Number.isFinite(item.discountPercent) ||
+        item.discountPercent < 0 ||
+        item.discountPercent > 100) {
+      errors.push(`Item ${index + 1}: discount must be between 0 and 100.`);
+    }
+  }
+
+  const duplicateNames = items
+    .map((item) => item.medicineName)
+    .filter((name, index, names) => names.indexOf(name) !== index);
+  if (duplicateNames.length) errors.push('Add each medicine only once per sale.');
+
+  try {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const preparedItems = [];
+
+    if (!errors.length) {
+      for (const item of items) {
+        const batches = await MedicineBatch.find({
+          medicineName: item.medicineName,
+          quantity: { $gt: 0 },
+          expiryDate: { $gte: today }
+        }).sort({ expiryDate: 1, createdAt: 1 }).lean();
+
+        let remaining = item.quantity;
+        const allocations = [];
+        for (const batch of batches) {
+          if (remaining <= 0) break;
+          const allocatedQuantity = Math.min(remaining, batch.quantity);
+          allocations.push({
+            medicineBatch: batch._id,
+            batchNumber: batch.batchNumber,
+            quantity: allocatedQuantity,
+            retailPrice: batch.retailPrice
+          });
+          remaining -= allocatedQuantity;
+        }
+
+        if (remaining > 0) {
+          errors.push(`${item.medicineName}: only ${item.quantity - remaining} available.`);
+          continue;
+        }
+
+        const subtotal = allocations.reduce(
+          (sum, allocation) => sum + allocation.quantity * allocation.retailPrice,
+          0
+        );
+        const discountAmount = subtotal * item.discountPercent / 100;
+        preparedItems.push({
+          ...item,
+          allocations,
+          subtotal,
+          discountAmount,
+          total: subtotal - discountAmount
+        });
+      }
+    }
+
+    if (errors.length) {
+      return res.status(422).render('inventory/sale', {
+        title: 'New Medicine Sale',
+        medicines: await availableMedicines(),
+        form,
+        errors
+      });
+    }
+
+    const invoiceNumber = createInvoiceNumber();
+    const appliedAllocations = [];
+    const transactionIds = [];
+
+    try {
+      for (const item of preparedItems) {
+        for (const allocation of item.allocations) {
+          const updated = await MedicineBatch.updateOne(
+            { _id: allocation.medicineBatch, quantity: { $gte: allocation.quantity } },
+            { $inc: { quantity: -allocation.quantity } }
+          );
+          if (!updated.modifiedCount) {
+            throw new Error(`${item.medicineName} stock changed during the sale. Please submit again.`);
+          }
+          appliedAllocations.push(allocation);
+
+          const transaction = await StockTransaction.create({
+            medicineBatch: allocation.medicineBatch,
+            type: 'OUT',
+            quantity: allocation.quantity,
+            reference: invoiceNumber,
+            remarks: 'Medicine sale',
+            performedBy: req.session?.username || ''
+          });
+          transactionIds.push(transaction._id);
+        }
+      }
+
+      const subtotal = preparedItems.reduce((sum, item) => sum + item.subtotal, 0);
+      const discountAmount = preparedItems.reduce((sum, item) => sum + item.discountAmount, 0);
+      await Sale.create({
+        invoiceNumber,
+        customerName: form.customerName || 'Walk-in customer',
+        items: preparedItems,
+        subtotal,
+        discountAmount,
+        grandTotal: subtotal - discountAmount,
+        performedBy: req.session?.username || ''
+      });
+    } catch (error) {
+      await Promise.all(appliedAllocations.map((allocation) =>
+        MedicineBatch.updateOne(
+          { _id: allocation.medicineBatch },
+          { $inc: { quantity: allocation.quantity } }
+        )
+      ));
+      if (transactionIds.length) {
+        await StockTransaction.deleteMany({ _id: { $in: transactionIds } });
+      }
+      throw error;
+    }
+
+    return res.redirect(`/inventory?message=${encodeURIComponent(`Sale ${invoiceNumber} completed successfully.`)}`);
+  } catch (error) {
+    if (error.message.includes('stock changed during the sale')) {
+      return res.status(409).render('inventory/sale', {
+        title: 'New Medicine Sale',
+        medicines: await availableMedicines(),
+        form,
+        errors: [error.message]
+      });
+    }
+    return next(error);
+  }
 };
 
 exports.downloadTemplate = (req, res) => {
