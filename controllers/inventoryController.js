@@ -1,6 +1,8 @@
 const MedicineBatch = require('../models/MedicineBatch');
 const StockTransaction = require('../models/StockTransaction');
 const Sale = require('../models/Sale');
+const SaleCounter = require('../models/SaleCounter');
+const { getClinicDate } = require('../utils/helpers');
 
 const REQUIRED_HEADERS = [
   'medicine_name',
@@ -14,17 +16,40 @@ const REQUIRED_HEADERS = [
 exports.index = async (req, res, next) => {
   try {
     const search = String(req.query.search || '').trim();
-    const query = search
-      ? {
-          $or: [
+    const stockStatus = String(req.query.stockStatus || '');
+    const expiryStatus = String(req.query.expiryStatus || '');
+    const sort = String(req.query.sort || 'medicine');
+    const conditions = [];
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const nearExpiryDate = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000);
+
+    if (search) {
+      conditions.push({
+        $or: [
             { medicineName: { $regex: search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } },
             { batchNumber: { $regex: search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } }
-          ]
-        }
-      : {};
+        ]
+      });
+    }
+    if (stockStatus === 'in_stock') conditions.push({ quantity: { $gt: 0 } });
+    if (stockStatus === 'out_of_stock') conditions.push({ quantity: { $lte: 0 } });
+    if (expiryStatus === 'expired') conditions.push({ expiryDate: { $lt: today } });
+    if (expiryStatus === 'near_expiry') conditions.push({ expiryDate: { $gte: today, $lte: nearExpiryDate } });
+    if (expiryStatus === 'valid') conditions.push({ expiryDate: { $gt: nearExpiryDate } });
+
+    const query = conditions.length ? { $and: conditions } : {};
+    const sortOptions = {
+      medicine: { medicineName: 1, expiryDate: 1 },
+      expiry: { expiryDate: 1, medicineName: 1 },
+      quantity_high: { quantity: -1, medicineName: 1 },
+      quantity_low: { quantity: 1, medicineName: 1 },
+      retail_high: { retailPrice: -1, medicineName: 1 },
+      retail_low: { retailPrice: 1, medicineName: 1 }
+    };
 
     const batches = await MedicineBatch.find(query)
-      .sort({ medicineName: 1, expiryDate: 1 })
+      .sort(sortOptions[sort] || sortOptions.medicine)
       .lean();
 
     const summary = batches.reduce((totals, batch) => {
@@ -38,6 +63,9 @@ exports.index = async (req, res, next) => {
       title: 'Medicine Inventory',
       batches,
       search,
+      stockStatus,
+      expiryStatus,
+      sort,
       summary
     });
   } catch (error) {
@@ -126,18 +154,38 @@ exports.showSale = async (req, res, next) => {
 exports.salesIndex = async (req, res, next) => {
   try {
     const search = String(req.query.search || '').trim();
+    const dateFrom = String(req.query.dateFrom || '').trim();
+    const dateTo = String(req.query.dateTo || '').trim();
+    const status = String(req.query.status || '').trim();
+    const soldBy = String(req.query.soldBy || '').trim();
     const safeSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const query = search
-      ? {
-          $or: [
+    const conditions = [];
+    if (search) {
+      conditions.push({
+        $or: [
             { invoiceNumber: { $regex: safeSearch, $options: 'i' } },
             { customerName: { $regex: safeSearch, $options: 'i' } },
             { 'items.medicineName': { $regex: safeSearch, $options: 'i' } }
-          ]
-        }
-      : {};
+        ]
+      });
+    }
+    const validDateFrom = /^\d{4}-\d{2}-\d{2}$/.test(dateFrom);
+    const validDateTo = /^\d{4}-\d{2}-\d{2}$/.test(dateTo);
+    if (validDateFrom || validDateTo) {
+      const createdAt = {};
+      if (validDateFrom) createdAt.$gte = new Date(`${dateFrom}T00:00:00.000Z`);
+      if (validDateTo) createdAt.$lte = new Date(`${dateTo}T23:59:59.999Z`);
+      conditions.push({ createdAt });
+    }
+    if (status === 'active') conditions.push({ $or: [{ status: 'ACTIVE' }, { status: { $exists: false } }] });
+    if (status === 'void') conditions.push({ status: 'VOID' });
+    if (soldBy) conditions.push({ performedBy: soldBy });
+    const query = conditions.length ? { $and: conditions } : {};
 
-    const sales = await Sale.find(query).sort({ createdAt: -1 }).lean();
+    const [sales, salespeople] = await Promise.all([
+      Sale.find(query).sort({ createdAt: -1 }).lean(),
+      Sale.distinct('performedBy', { performedBy: { $ne: '' } })
+    ]);
     const summary = sales.reduce((totals, sale) => {
       if (sale.status === 'VOID') return totals;
       totals.count += 1;
@@ -150,6 +198,11 @@ exports.salesIndex = async (req, res, next) => {
       title: 'Medicine Sales',
       sales,
       search,
+      dateFrom,
+      dateTo,
+      status,
+      soldBy,
+      salespeople: salespeople.sort(),
       summary
     });
   } catch (error) {
@@ -263,11 +316,24 @@ function saleItems(body) {
     }));
 }
 
-function createInvoiceNumber() {
-  const now = new Date();
-  const timestamp = now.toISOString().replace(/\D/g, '').slice(0, 14);
-  const suffix = Math.floor(Math.random() * 9000 + 1000);
-  return `SALE-${timestamp}-${suffix}`;
+async function createInvoiceNumber() {
+  const date = getClinicDate();
+  let counter;
+  try {
+    counter = await SaleCounter.findOneAndUpdate(
+      { date },
+      { $inc: { sequence: 1 } },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+  } catch (error) {
+    if (error.code !== 11000) throw error;
+    counter = await SaleCounter.findOneAndUpdate(
+      { date },
+      { $inc: { sequence: 1 } },
+      { new: true }
+    );
+  }
+  return `INV-${date.replaceAll('-', '').slice(2)}-${String(counter.sequence).padStart(3, '0')}`;
 }
 
 exports.createSale = async (req, res, next) => {
@@ -352,7 +418,7 @@ exports.createSale = async (req, res, next) => {
       });
     }
 
-    const invoiceNumber = createInvoiceNumber();
+    const invoiceNumber = await createInvoiceNumber();
     const appliedAllocations = [];
     const transactionIds = [];
     let createdSale;

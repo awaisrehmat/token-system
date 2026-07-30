@@ -31,13 +31,24 @@
 
 <div class="card app-card">
   <div class="card-header bg-white py-3">
-    <form method="get" action="/inventory/sales" class="d-flex flex-wrap gap-2">
+    <form method="get" action="/inventory/sales" class="filter-bar">
       <div class="input-group inventory-search">
         <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
         <input type="search" class="form-control" name="search" value="<%= search %>" placeholder="Invoice, customer, or medicine" aria-label="Search sales">
       </div>
-      <button class="btn btn-outline-primary" type="submit">Search</button>
-      <% if (search) { %><a href="/inventory/sales" class="btn btn-outline-secondary">Clear</a><% } %>
+      <input class="form-control filter-date" type="date" name="dateFrom" value="<%= dateFrom %>" aria-label="From date" title="From date">
+      <input class="form-control filter-date" type="date" name="dateTo" value="<%= dateTo %>" aria-label="To date" title="To date">
+      <select class="form-select filter-select" name="status" aria-label="Sale status">
+        <option value="">All statuses</option>
+        <option value="active" <%= status === 'active' ? 'selected' : '' %>>Completed</option>
+        <option value="void" <%= status === 'void' ? 'selected' : '' %>>Deleted</option>
+      </select>
+      <select class="form-select filter-select" name="soldBy" aria-label="Sold by">
+        <option value="">All staff</option>
+        <% salespeople.forEach((person) => { %><option value="<%= person %>" <%= soldBy === person ? 'selected' : '' %>><%= person %></option><% }) %>
+      </select>
+      <button class="btn btn-outline-primary" type="submit"><i class="bi bi-funnel me-1"></i> Filter</button>
+      <% if (search || dateFrom || dateTo || status || soldBy) { %><a href="/inventory/sales" class="btn btn-outline-secondary">Clear</a><% } %>
     </form>
   </div>
 

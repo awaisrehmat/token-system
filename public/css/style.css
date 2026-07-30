@@ -161,6 +161,22 @@ main.container {
   width: min(100%, 28rem);
 }
 
+.filter-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.filter-select {
+  width: auto;
+  min-width: 9.5rem;
+}
+
+.filter-date {
+  width: 10.5rem;
+}
+
 .sale-line-total {
   min-height: 2.75rem;
   display: flex;

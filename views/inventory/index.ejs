@@ -47,7 +47,7 @@
 
 <div class="card app-card">
   <div class="card-header bg-white py-3">
-    <form method="get" action="/inventory" class="d-flex flex-wrap gap-2">
+    <form method="get" action="/inventory" class="filter-bar">
       <div class="input-group inventory-search">
         <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
         <input
@@ -59,8 +59,27 @@
           aria-label="Search medicine or batch"
         >
       </div>
+      <select class="form-select filter-select" name="stockStatus" aria-label="Stock status">
+        <option value="">All stock</option>
+        <option value="in_stock" <%= stockStatus === 'in_stock' ? 'selected' : '' %>>In stock</option>
+        <option value="out_of_stock" <%= stockStatus === 'out_of_stock' ? 'selected' : '' %>>Out of stock</option>
+      </select>
+      <select class="form-select filter-select" name="expiryStatus" aria-label="Expiry status">
+        <option value="">All expiry</option>
+        <option value="valid" <%= expiryStatus === 'valid' ? 'selected' : '' %>>Valid (90+ days)</option>
+        <option value="near_expiry" <%= expiryStatus === 'near_expiry' ? 'selected' : '' %>>Near expiry</option>
+        <option value="expired" <%= expiryStatus === 'expired' ? 'selected' : '' %>>Expired</option>
+      </select>
+      <select class="form-select filter-select" name="sort" aria-label="Sort inventory">
+        <option value="medicine" <%= sort === 'medicine' ? 'selected' : '' %>>Medicine A–Z</option>
+        <option value="expiry" <%= sort === 'expiry' ? 'selected' : '' %>>Expiry first</option>
+        <option value="quantity_high" <%= sort === 'quantity_high' ? 'selected' : '' %>>Quantity: high to low</option>
+        <option value="quantity_low" <%= sort === 'quantity_low' ? 'selected' : '' %>>Quantity: low to high</option>
+        <option value="retail_high" <%= sort === 'retail_high' ? 'selected' : '' %>>Retail price: high to low</option>
+        <option value="retail_low" <%= sort === 'retail_low' ? 'selected' : '' %>>Retail price: low to high</option>
+      </select>
       <button class="btn btn-outline-primary" type="submit">Search</button>
-      <% if (search) { %>
+      <% if (search || stockStatus || expiryStatus || sort !== 'medicine') { %>
         <a href="/inventory" class="btn btn-outline-secondary">Clear</a>
       <% } %>
     </form>
