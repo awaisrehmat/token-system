@@ -66,6 +66,9 @@
           </a>
           <% } %>
           <% if (can('stock.upload')) { %>
+          <a class="sidebar-link <%= currentPath === '/inventory/add' ? 'active' : '' %>" href="/inventory/add">
+            <i class="bi bi-plus-circle"></i><span>Add Stock</span>
+          </a>
           <a class="sidebar-link <%= currentPath === '/inventory/upload' ? 'active' : '' %>" href="/inventory/upload">
             <i class="bi bi-cloud-arrow-up"></i><span>Upload Stock</span>
           </a>

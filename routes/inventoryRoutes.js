@@ -21,6 +21,8 @@ router.get('/sales/:id/bill', requirePermission('sales.manage'), inventoryContro
 router.post('/sales/:id/delete', requirePermission('sales.manage'), inventoryController.deleteSale);
 router.get('/sale', requirePermission('sales.manage'), inventoryController.showSale);
 router.post('/sale', requirePermission('sales.manage'), inventoryController.createSale);
+router.get('/add', requirePermission('stock.upload'), inventoryController.showAddStock);
+router.post('/add', requirePermission('stock.upload'), inventoryController.addStock);
 router.get('/upload', requirePermission('stock.upload'), inventoryController.showUpload);
 router.get('/upload/template', requirePermission('stock.upload'), inventoryController.downloadTemplate);
 router.post('/upload', requirePermission('stock.upload'), upload.single('medicineFile'), inventoryController.uploadMedicines);

@@ -119,6 +119,76 @@ exports.showUpload = (req, res) => {
   res.render('inventory/upload', { title: 'Upload Medicines' });
 };
 
+exports.showAddStock = (req, res) => {
+  res.render('inventory/add', {
+    title: 'Add Medicine Stock',
+    form: {},
+    errors: []
+  });
+};
+
+exports.addStock = async (req, res, next) => {
+  const form = {
+    medicineName: String(req.body.medicineName || '').trim(),
+    batchNumber: String(req.body.batchNumber || '').trim(),
+    expiryDate: String(req.body.expiryDate || '').trim(),
+    quantity: String(req.body.quantity || '').trim(),
+    purchasePrice: String(req.body.purchasePrice || '').trim(),
+    retailPrice: String(req.body.retailPrice || '').trim(),
+    reference: String(req.body.reference || '').trim()
+  };
+  const quantity = Number(form.quantity);
+  const purchasePrice = Number(form.purchasePrice);
+  const retailPrice = Number(form.retailPrice);
+  const expiryDate = new Date(`${form.expiryDate}T00:00:00.000Z`);
+  const errors = [];
+
+  if (!form.medicineName) errors.push('Medicine name is required.');
+  if (!form.batchNumber) errors.push('Batch number is required.');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(form.expiryDate) || Number.isNaN(expiryDate.getTime())) {
+    errors.push('Enter a valid expiry date.');
+  }
+  if (!Number.isFinite(quantity) || quantity <= 0) errors.push('Quantity must be greater than zero.');
+  if (!Number.isFinite(purchasePrice) || purchasePrice < 0) errors.push('Purchase price must be zero or greater.');
+  if (!Number.isFinite(retailPrice) || retailPrice < 0) errors.push('Retail price must be zero or greater.');
+
+  try {
+    if (errors.length) {
+      return res.status(422).render('inventory/add', {
+        title: 'Add Medicine Stock',
+        form,
+        errors
+      });
+    }
+
+    const batch = await MedicineBatch.findOneAndUpdate(
+      {
+        medicineName: form.medicineName,
+        batchNumber: form.batchNumber,
+        expiryDate
+      },
+      {
+        $inc: { quantity },
+        $set: { purchasePrice, retailPrice }
+      },
+      { upsert: true, new: true, runValidators: true }
+    );
+
+    await StockTransaction.create({
+      medicineBatch: batch._id,
+      type: 'IN',
+      quantity,
+      reference: form.reference,
+      remarks: 'Manual stock entry',
+      performedBy: req.session?.username || ''
+    });
+
+    return res.redirect(`/inventory?message=${encodeURIComponent(`${form.medicineName} stock added successfully.`)}`);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 async function availableMedicines() {
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
