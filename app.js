@@ -11,7 +11,7 @@ const consultantRoutes = require('./routes/consultantRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const userRoutes = require('./routes/userRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
-const { dashboard } = require('./controllers/patientController');
+const { index: dashboard } = require('./controllers/dashboardController');
 const { requireAuth, requirePermission, hasPermission, showLogin, login, logout } = require('./middleware/auth');
 
 const app = express();
@@ -93,12 +93,7 @@ app.use((req, res, next) => {
   next();
 });
 app.post('/logout', logout);
-app.get('/', (req, res, next) => {
-  if (!hasPermission(req, 'patients.manage') && hasPermission(req, 'inventory.view')) {
-    return res.redirect('/inventory');
-  }
-  return dashboard(req, res, next);
-});
+app.get('/', dashboard);
 app.use('/patients', patientRoutes);
 app.use('/consultants', consultantRoutes);
 app.use('/inventory', inventoryRoutes);

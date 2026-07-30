@@ -1,53 +1,76 @@
 <%- include('partials/header') %>
 
-<div class="page-heading d-flex flex-wrap gap-3 justify-content-between align-items-center mb-4">
+<section class="dashboard-hero mb-4">
   <div>
-    <h1 class="h3 mb-1">Dashboard</h1>
-    <p class="text-secondary mb-0">Today at a glance</p>
+    <span class="dashboard-eyebrow">Operational overview</span>
+    <h1>Good day, <%= displayName || currentUser || 'Admin' %></h1>
+    <p>Here is what is happening across <%= clinicName %> today.</p>
   </div>
-  <a href="/patients/new" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Register Patient</a>
+  <div class="dashboard-date"><i class="bi bi-calendar3"></i><span><%= new Date(`${today}T00:00:00`).toLocaleDateString('en-PK', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) %></span></div>
+</section>
+
+<div class="dashboard-actions mb-4">
+  <% if (can('patients.manage')) { %><a href="/patients/new" class="dashboard-action"><span><i class="bi bi-person-plus"></i></span><div><strong>Register Patient</strong><small>Create a new token</small></div><i class="bi bi-arrow-right"></i></a><% } %>
+  <% if (can('sales.manage')) { %><a href="/inventory/sale" class="dashboard-action"><span><i class="bi bi-cart-plus"></i></span><div><strong>New Sale</strong><small>Create medicine bill</small></div><i class="bi bi-arrow-right"></i></a><% } %>
+  <% if (can('stock.upload')) { %><a href="/inventory/add" class="dashboard-action"><span><i class="bi bi-box-arrow-in-down"></i></span><div><strong>Add Stock</strong><small>Receive medicine batch</small></div><i class="bi bi-arrow-right"></i></a><% } %>
+  <% if (can('users.manage')) { %><a href="/users" class="dashboard-action"><span><i class="bi bi-people"></i></span><div><strong>Manage Users</strong><small>Roles and access</small></div><i class="bi bi-arrow-right"></i></a><% } %>
 </div>
 
-<div class="row g-3 mb-4">
-  <div class="col-12">
-    <div class="card metric-card metric-card-patients h-100">
-      <div class="card-body d-flex align-items-center justify-content-between">
-        <div>
-          <p class="metric-label mb-2">Today's Total Patients</p>
-          <p class="metric-value mb-0"><%= todayTotal %></p>
+<% if (showClinic && clinic) { %>
+  <div class="dashboard-section-heading"><div><span>Clinic</span><h2>Patient Operations</h2></div><a href="/patients">View patients <i class="bi bi-arrow-right"></i></a></div>
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3"><div class="card dashboard-kpi"><div class="card-body"><span class="dashboard-kpi-icon kpi-blue"><i class="bi bi-person-check"></i></span><div><small>Patients Today</small><strong><%= clinic.todayPatients.toLocaleString() %></strong><span>Tokens issued today</span></div></div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card dashboard-kpi"><div class="card-body"><span class="dashboard-kpi-icon kpi-violet"><i class="bi bi-person-vcard"></i></span><div><small>Patient Records</small><strong><%= clinic.patientRecords.toLocaleString() %></strong><span>Unique MR numbers</span></div></div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card dashboard-kpi"><div class="card-body"><span class="dashboard-kpi-icon kpi-teal"><i class="bi bi-person-badge"></i></span><div><small>Physicians</small><strong><%= clinic.physicians.toLocaleString() %></strong><span>Available profiles</span></div></div></div></div>
+    <% if (showUsers) { %><div class="col-sm-6 col-xl-3"><div class="card dashboard-kpi"><div class="card-body"><span class="dashboard-kpi-icon kpi-amber"><i class="bi bi-shield-check"></i></span><div><small>Active Users</small><strong><%= userCount.toLocaleString() %></strong><span>Staff accounts</span></div></div></div></div><% } %>
+  </div>
+<% } %>
+
+<% if (showPharmacy && pharmacy) { %>
+  <div class="dashboard-section-heading"><div><span>Pharmacy</span><h2>Inventory &amp; Sales</h2></div><a href="/inventory">View inventory <i class="bi bi-arrow-right"></i></a></div>
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3"><div class="card dashboard-kpi"><div class="card-body"><span class="dashboard-kpi-icon kpi-blue"><i class="bi bi-capsule"></i></span><div><small>Stock Quantity</small><strong><%= pharmacy.quantity.toLocaleString() %></strong><span><%= pharmacy.batches %> medicine batches</span></div></div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card dashboard-kpi"><div class="card-body"><span class="dashboard-kpi-icon kpi-teal"><i class="bi bi-cash-stack"></i></span><div><small>Sales Today</small><strong>Rs. <%= pharmacy.todayRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 }) %></strong><span><%= pharmacy.todaySales %> completed sales</span></div></div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card dashboard-kpi"><div class="card-body"><span class="dashboard-kpi-icon kpi-amber"><i class="bi bi-hourglass-split"></i></span><div><small>Near Expiry</small><strong><%= pharmacy.nearExpiryBatches.toLocaleString() %></strong><span>Within 90 days</span></div></div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card dashboard-kpi"><div class="card-body"><span class="dashboard-kpi-icon kpi-red"><i class="bi bi-exclamation-triangle"></i></span><div><small>Stock Alerts</small><strong><%= (pharmacy.outOfStock + pharmacy.expiredBatches).toLocaleString() %></strong><span><%= pharmacy.outOfStock %> empty · <%= pharmacy.expiredBatches %> expired</span></div></div></div></div>
+  </div>
+<% } %>
+
+<div class="row g-4">
+  <% if (showClinic && clinic) { %>
+    <div class="<%= showPharmacy ? 'col-xl-6' : 'col-12' %>">
+      <div class="card app-card dashboard-activity-card">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center"><h2 class="h5 mb-0">Recent Patients</h2><a href="/patients" class="small text-decoration-none">View all</a></div>
+        <div class="list-group list-group-flush">
+          <% if (!clinic.recentPatients.length) { %><div class="dashboard-empty">No patients registered yet.</div><% } %>
+          <% clinic.recentPatients.forEach((patient) => { %>
+            <a href="/patients/<%= patient._id %>/history" class="list-group-item dashboard-activity-item">
+              <span class="activity-avatar"><%= patient.patientName.charAt(0).toUpperCase() %></span>
+              <span class="activity-copy"><strong><%= patient.patientName %></strong><small><%= patient.mrNumber %> · <%= patient.consultant?.name || 'No physician' %></small></span>
+              <span class="activity-time"><%= formatDateTime(patient.createdAt) %></span>
+            </a>
+          <% }) %>
         </div>
-        <span class="metric-icon"><i class="bi bi-people"></i></span>
       </div>
     </div>
-  </div>
-</div>
-
-<div class="card app-card">
-  <div class="card-header bg-white py-3">
-    <h2 class="h5 mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Recently Registered Patients</h2>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
-      <thead class="table-light">
-        <tr><th>MR Number</th><th>Token</th><th>Patient</th><th>CNIC</th><th>Physician</th><th>Date</th></tr>
-      </thead>
-      <tbody>
-        <% if (!recentPatients.length) { %>
-          <tr><td colspan="6" class="text-center text-secondary py-4">No patients registered yet.</td></tr>
-        <% } %>
-        <% recentPatients.forEach((patient) => { %>
-          <tr>
-            <td class="text-nowrap fw-semibold"><%= patient.mrNumber %></td>
-            <td><span class="badge text-bg-primary fs-6"><%= patient.tokenNumber %></span></td>
-            <td><%= patient.patientName %></td>
-            <td><%= formatCnic(patient.cnic) %></td>
-            <td><%= patient.consultant ? patient.consultant.name : 'Deleted physician' %></td>
-            <td><%= formatDateTime(patient.createdAt) %></td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
+  <% } %>
+  <% if (showPharmacy && pharmacy) { %>
+    <div class="<%= showClinic ? 'col-xl-6' : 'col-12' %>">
+      <div class="card app-card dashboard-activity-card">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center"><h2 class="h5 mb-0">Recent Sales</h2><a href="/inventory/sales" class="small text-decoration-none">View all</a></div>
+        <div class="list-group list-group-flush">
+          <% if (!pharmacy.recentSales.length) { %><div class="dashboard-empty">No sales recorded yet.</div><% } %>
+          <% pharmacy.recentSales.forEach((sale) => { %>
+            <a href="/inventory/sales/<%= sale._id %>/bill" class="list-group-item dashboard-activity-item">
+              <span class="activity-avatar activity-sale"><i class="bi bi-receipt"></i></span>
+              <span class="activity-copy"><strong><%= sale.invoiceNumber %></strong><small><%= sale.customerName %> · <%= sale.items.length %> item(s)</small></span>
+              <span class="activity-amount">Rs. <%= sale.grandTotal.toFixed(2) %></span>
+            </a>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+  <% } %>
 </div>
 
 <%- include('partials/footer') %>
