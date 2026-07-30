@@ -156,6 +156,32 @@ exports.salesIndex = async (req, res, next) => {
   }
 };
 
+exports.saleBill = async (req, res, next) => {
+  try {
+    if (!require('mongoose').isValidObjectId(req.params.id)) {
+      return res.status(404).render('error', {
+        title: 'Sale Not Found',
+        pageMessage: 'The requested sale could not be found.'
+      });
+    }
+
+    const sale = await Sale.findById(req.params.id).lean();
+    if (!sale) {
+      return res.status(404).render('error', {
+        title: 'Sale Not Found',
+        pageMessage: 'The requested sale could not be found.'
+      });
+    }
+
+    return res.render('inventory/bill', {
+      title: `Bill ${sale.invoiceNumber}`,
+      sale
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 function saleItems(body) {
   const rawItems = Array.isArray(body.items)
     ? body.items
@@ -265,6 +291,7 @@ exports.createSale = async (req, res, next) => {
     const invoiceNumber = createInvoiceNumber();
     const appliedAllocations = [];
     const transactionIds = [];
+    let createdSale;
 
     try {
       for (const item of preparedItems) {
@@ -292,7 +319,7 @@ exports.createSale = async (req, res, next) => {
 
       const subtotal = preparedItems.reduce((sum, item) => sum + item.subtotal, 0);
       const discountAmount = preparedItems.reduce((sum, item) => sum + item.discountAmount, 0);
-      await Sale.create({
+      createdSale = await Sale.create({
         invoiceNumber,
         customerName: form.customerName || 'Walk-in customer',
         items: preparedItems,
@@ -314,7 +341,7 @@ exports.createSale = async (req, res, next) => {
       throw error;
     }
 
-    return res.redirect(`/inventory/sales?message=${encodeURIComponent(`Sale ${invoiceNumber} completed successfully.`)}`);
+    return res.redirect(`/inventory/sales/${createdSale._id}/bill?print=1&message=${encodeURIComponent(`Sale ${invoiceNumber} completed successfully.`)}`);
   } catch (error) {
     if (error.message.includes('stock changed during the sale')) {
       return res.status(409).render('inventory/sale', {

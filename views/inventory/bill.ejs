@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | <%= clinicName %></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/bill.css">
+</head>
+<body>
+  <div class="no-print bill-controls">
+    <% if (message) { %><div class="alert alert-success py-2"><%= message %></div><% } %>
+    <a href="/inventory/sales" class="btn btn-outline-secondary">Sales History</a>
+    <a href="/inventory/sale" class="btn btn-outline-primary">New Sale</a>
+    <button type="button" class="btn btn-primary" onclick="window.print()">Print Bill</button>
+  </div>
+
+  <article class="sale-bill">
+    <header class="bill-header">
+      <h1><%= clinicName %></h1>
+      <p>Medicine Sale Receipt</p>
+    </header>
+    <div class="bill-divider"></div>
+    <dl class="bill-meta">
+      <div><dt>Invoice</dt><dd><%= sale.invoiceNumber %></dd></div>
+      <div><dt>Date</dt><dd><%= sale.createdAt.toLocaleString('en-PK') %></dd></div>
+      <div><dt>Customer</dt><dd><%= sale.customerName %></dd></div>
+      <% if (sale.performedBy) { %><div><dt>Sold by</dt><dd><%= sale.performedBy %></dd></div><% } %>
+    </dl>
+    <div class="bill-divider"></div>
+
+    <table class="bill-items">
+      <thead><tr><th>Medicine</th><th class="number">Qty</th><th class="number">Amount</th></tr></thead>
+      <tbody>
+        <% sale.items.forEach((item) => { %>
+          <tr>
+            <td>
+              <strong><%= item.medicineName %></strong>
+              <small>
+                <% item.allocations.forEach((allocation, index) => { %><%= index ? ', ' : '' %>Batch <%= allocation.batchNumber %><% }) %>
+              </small>
+              <% if (item.discountPercent > 0) { %><small>Discount: <%= item.discountPercent %>%</small><% } %>
+            </td>
+            <td class="number"><%= item.quantity %></td>
+            <td class="number"><%= item.total.toFixed(2) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <div class="bill-divider"></div>
+    <dl class="bill-totals">
+      <div><dt>Subtotal</dt><dd>Rs. <%= sale.subtotal.toFixed(2) %></dd></div>
+      <div><dt>Discount</dt><dd>Rs. <%= sale.discountAmount.toFixed(2) %></dd></div>
+      <div class="grand-total"><dt>Total</dt><dd>Rs. <%= sale.grandTotal.toFixed(2) %></dd></div>
+    </dl>
+    <div class="bill-divider"></div>
+    <p class="bill-footer">Thank you for your purchase.</p>
+  </article>
+
+  <% if (String(query.print || '') === '1') { %>
+    <script>window.addEventListener('load', function () { window.print(); });</script>
+  <% } %>
+</body>
+</html>

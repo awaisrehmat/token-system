@@ -74,12 +74,13 @@
           <th class="text-end">Discount</th>
           <th class="text-end">Total</th>
           <th>Sold By</th>
+          <th class="text-end">Bill</th>
         </tr>
       </thead>
       <tbody>
         <% if (!sales.length) { %>
           <tr>
-            <td colspan="9" class="text-center text-secondary py-5">
+            <td colspan="10" class="text-center text-secondary py-5">
               <i class="bi bi-receipt d-block fs-2 mb-2"></i>
               <%= search ? 'No matching sales found.' : 'No sales recorded yet.' %>
             </td>
@@ -103,6 +104,11 @@
             <td class="text-end text-nowrap">Rs. <%= sale.discountAmount.toFixed(2) %></td>
             <td class="text-end text-nowrap fw-bold">Rs. <%= sale.grandTotal.toFixed(2) %></td>
             <td><%= sale.performedBy || '—' %></td>
+            <td class="text-end">
+              <a href="/inventory/sales/<%= sale._id %>/bill" class="btn btn-outline-primary btn-sm" title="View bill">
+                <i class="bi bi-receipt-cutoff me-1"></i> View
+              </a>
+            </td>
           </tr>
         <% }) %>
       </tbody>
