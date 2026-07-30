@@ -115,7 +115,7 @@ exports.showSale = async (req, res, next) => {
     res.render('inventory/sale', {
       title: 'New Medicine Sale',
       medicines: await availableMedicines(),
-      form: { customerName: '', items: [{}] },
+      form: { customerName: '', items: Array.from({ length: 8 }, () => ({})) },
       errors: []
     });
   } catch (error) {
@@ -162,12 +162,15 @@ function saleItems(body) {
     : Object.values(body.items || {});
 
   return rawItems
+    .filter((item) =>
+      String(item.medicineName || '').trim() ||
+      String(item.quantity || '').trim()
+    )
     .map((item) => ({
       medicineName: String(item.medicineName || '').trim(),
       quantity: Number(item.quantity),
       discountPercent: Number(item.discountPercent || 0)
-    }))
-    .filter((item) => item.medicineName || Number.isFinite(item.quantity));
+    }));
 }
 
 function createInvoiceNumber() {

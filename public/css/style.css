@@ -169,6 +169,162 @@ main.container {
   font-weight: 700;
 }
 
+.sale-sheet-card {
+  overflow: hidden;
+}
+
+.sale-sheet-header,
+.sale-sheet-footer {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+}
+
+.sale-sheet-header {
+  justify-content: space-between;
+  border-bottom: 1px solid var(--app-border);
+  background: #fff;
+}
+
+.sale-sheet-kicker {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: var(--app-primary);
+  font-size: 0.65rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sale-customer-field {
+  width: min(100%, 22rem);
+}
+
+.sale-customer-field .form-label {
+  margin-bottom: 0.25rem;
+}
+
+.sale-sheet-table {
+  min-width: 900px;
+}
+
+.sale-sheet-table thead th {
+  background: #f1f5f9;
+}
+
+.sale-sheet-table td {
+  background: #fff;
+  padding-block: 0.55rem;
+}
+
+.sale-sheet-table .form-control,
+.sale-sheet-table .form-select {
+  min-height: 2.4rem;
+  border-color: transparent;
+  background-color: transparent;
+}
+
+.sale-sheet-table .form-control:hover,
+.sale-sheet-table .form-select:hover,
+.sale-sheet-table .form-control:focus,
+.sale-sheet-table .form-select:focus {
+  border-color: #bfdbfe;
+  background-color: #fff;
+}
+
+.sale-sheet-table .form-control.is-invalid,
+.sale-sheet-table .form-select.is-invalid {
+  border-color: #dc3545;
+  background-color: #fff5f5;
+}
+
+.sale-sheet-table .invalid-feedback {
+  max-width: 18rem;
+  font-size: 0.68rem;
+  white-space: normal;
+}
+
+.sale-row-number {
+  width: 3rem;
+  color: #94a3b8 !important;
+  text-align: center;
+}
+
+.sale-sheet-table .medicine-select {
+  min-width: 17rem;
+}
+
+.sale-sheet-table .quantity-input,
+.sale-sheet-table .discount-input {
+  min-width: 7rem;
+}
+
+.sale-stock-cell,
+.sale-price-cell,
+.sale-line-total {
+  min-width: 7.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.sale-sheet-table .sale-line-total {
+  display: table-cell;
+}
+
+.sale-row-active td {
+  background: #f8fbff;
+}
+
+.sale-sheet-footer {
+  justify-content: flex-end;
+  border-top: 1px solid var(--app-border);
+  background: #fff;
+}
+
+.sale-sheet-footer > p {
+  margin-right: auto;
+}
+
+.sale-summary {
+  display: flex;
+  min-width: 12rem;
+  flex-direction: column;
+  text-align: right;
+}
+
+.sale-summary span {
+  color: var(--app-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.sale-summary strong {
+  color: var(--app-navy);
+  font-size: 1.35rem;
+}
+
+@media (max-width: 767.98px) {
+  .sale-sheet-header,
+  .sale-sheet-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sale-customer-field,
+  .sale-summary {
+    width: 100%;
+  }
+
+  .sale-summary {
+    text-align: left;
+  }
+
+  .sale-sheet-footer .btn {
+    width: 100%;
+  }
+}
+
 .metric-icon {
   display: grid;
   width: 3.5rem;
