@@ -125,6 +125,11 @@ main.container {
   --metric-soft: #f5f3ff;
 }
 
+.metric-card-expiry {
+  --metric-color: #dc2626;
+  --metric-soft: #fef2f2;
+}
+
 .metric-card .card-body {
   padding: 1.6rem;
 }
@@ -141,6 +146,14 @@ main.container {
   font-weight: 750;
   letter-spacing: -0.05em;
   line-height: 1;
+}
+
+.inventory-metric-value {
+  font-size: clamp(1.35rem, 3vw, 2rem);
+}
+
+.inventory-search {
+  width: min(100%, 28rem);
 }
 
 .metric-icon {

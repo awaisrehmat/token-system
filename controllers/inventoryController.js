@@ -10,6 +10,40 @@ const REQUIRED_HEADERS = [
   'retail_price'
 ];
 
+exports.index = async (req, res, next) => {
+  try {
+    const search = String(req.query.search || '').trim();
+    const query = search
+      ? {
+          $or: [
+            { medicineName: { $regex: search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } },
+            { batchNumber: { $regex: search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } }
+          ]
+        }
+      : {};
+
+    const batches = await MedicineBatch.find(query)
+      .sort({ medicineName: 1, expiryDate: 1 })
+      .lean();
+
+    const summary = batches.reduce((totals, batch) => {
+      totals.quantity += batch.quantity;
+      totals.stockValue += batch.quantity * batch.purchasePrice;
+      if (batch.quantity > 0 && batch.expiryDate < new Date()) totals.expired += 1;
+      return totals;
+    }, { quantity: 0, stockValue: 0, expired: 0 });
+
+    res.render('inventory/index', {
+      title: 'Medicine Inventory',
+      batches,
+      search,
+      summary
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 function parseCsv(text) {
   const rows = [];
   let row = [];
