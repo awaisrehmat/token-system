@@ -794,7 +794,32 @@ main.container {
 
 .sidebar-nav {
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 1rem 0.75rem;
+  scrollbar-color: #475569 transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #334155;
+}
+
+.sidebar-nav:hover::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #64748b, #475569);
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }
 
 .sidebar-section + .sidebar-section {
