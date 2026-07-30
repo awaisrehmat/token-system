@@ -369,6 +369,47 @@ main.container {
   font-size: 1.1rem;
 }
 
+.receipt-preview {
+  border: 1px dashed #94a3b8;
+  background: #fff;
+  font-family: Arial, sans-serif;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.receipt-preview h3 {
+  margin: 0;
+  color: #000;
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+.receipt-preview > p {
+  margin: 0.2rem 0;
+  color: #000;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.receipt-preview-line {
+  border-top: 1px dashed #000;
+  margin: 0.75rem 0;
+}
+
+.receipt-preview-row {
+  display: flex;
+  justify-content: space-between;
+  color: #000;
+  font-size: 0.78rem;
+  margin: 0.35rem 0;
+}
+
+.receipt-preview small {
+  color: #000;
+  font-weight: 700;
+}
+
 @media (max-width: 767.98px) {
   .sale-detail-meta {
     grid-template-columns: repeat(2, minmax(0, 1fr));

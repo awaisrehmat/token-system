@@ -53,29 +53,4 @@
   </div>
 </div>
 
-<% if (can('physicians.manage')) { %>
-<div class="card app-card mt-4">
-  <div class="card-header bg-white py-3">
-    <h2 class="h5 mb-0"><i class="bi bi-printer me-2 text-primary"></i>Printable Token Header & Footer</h2>
-  </div>
-  <div class="card-body">
-    <form action="/consultants/print-settings" method="post" class="row g-3">
-      <div class="col-md-6">
-        <label for="printHeader" class="form-label">Printable Header</label>
-        <input type="text" class="form-control" id="printHeader" name="header" maxlength="120" value="<%= printSetting.header %>" required>
-        <div class="form-text">Shown at the top of every printed token.</div>
-      </div>
-      <div class="col-md-6">
-        <label for="printFooter" class="form-label">Printable Footer</label>
-        <input type="text" class="form-control" id="printFooter" name="footer" maxlength="250" value="<%= printSetting.footer %>" required>
-        <div class="form-text">Shown at the bottom of every printed token.</div>
-      </div>
-      <div class="col-12">
-        <button type="submit" class="btn btn-primary"><i class="bi bi-floppy me-1"></i> Save Print Settings</button>
-      </div>
-    </form>
-  </div>
-</div>
-<% } %>
-
 <%- include('../partials/footer') %>

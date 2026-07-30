@@ -1,5 +1,4 @@
 const Consultant = require('../models/Consultant');
-const PrintSetting = require('../models/PrintSetting');
 
 function safeReturnTo(value) {
   const path = String(value || '');
@@ -9,40 +8,10 @@ function safeReturnTo(value) {
 
 exports.index = async (req, res, next) => {
   try {
-    const [consultants, savedPrintSetting] = await Promise.all([
-      Consultant.find().sort({ name: 1 }).lean(),
-      PrintSetting.findOne({ key: 'default' }).lean()
-    ]);
-    const printSetting = savedPrintSetting || {
-      header: 'My Clinic',
-      footer: 'Please wait for your token number to be called.'
-    };
-    res.render('consultants/index', { title: 'Physician Management', consultants, printSetting });
+    const consultants = await Consultant.find().sort({ name: 1 }).lean();
+    res.render('consultants/index', { title: 'Physician Management', consultants });
   } catch (error) {
     next(error);
-  }
-};
-
-exports.updatePrintSettings = async (req, res, next) => {
-  try {
-    const header = String(req.body.header || '').trim();
-    const footer = String(req.body.footer || '').trim();
-
-    if (!header || !footer) {
-      return res.redirect(`/consultants?error=${encodeURIComponent('Print header and footer are required.')}`);
-    }
-    if (header.length > 120 || footer.length > 250) {
-      return res.redirect(`/consultants?error=${encodeURIComponent('Print header or footer is too long.')}`);
-    }
-
-    await PrintSetting.findOneAndUpdate(
-      { key: 'default' },
-      { header, footer },
-      { upsert: true, runValidators: true, setDefaultsOnInsert: true }
-    );
-    return res.redirect(`/consultants?message=${encodeURIComponent('Printable header and footer updated successfully.')}`);
-  } catch (error) {
-    return next(error);
   }
 };
 

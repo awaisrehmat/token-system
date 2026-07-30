@@ -2,6 +2,7 @@ const MedicineBatch = require('../models/MedicineBatch');
 const StockTransaction = require('../models/StockTransaction');
 const Sale = require('../models/Sale');
 const SaleCounter = require('../models/SaleCounter');
+const PrintSetting = require('../models/PrintSetting');
 const { getClinicDate } = require('../utils/helpers');
 
 const REQUIRED_HEADERS = [
@@ -352,7 +353,10 @@ exports.saleBill = async (req, res, next) => {
       });
     }
 
-    const sale = await Sale.findById(req.params.id).lean();
+    const [sale, savedPrintSetting] = await Promise.all([
+      Sale.findById(req.params.id).lean(),
+      PrintSetting.findOne({ key: 'default' }).lean()
+    ]);
     if (!sale) {
       return res.status(404).render('error', {
         title: 'Sale Not Found',
@@ -362,7 +366,8 @@ exports.saleBill = async (req, res, next) => {
 
     return res.render('inventory/bill', {
       title: `Bill ${sale.invoiceNumber}`,
-      sale
+      sale,
+      receiptFooter: savedPrintSetting?.footer || 'Thank you for your purchase.'
     });
   } catch (error) {
     return next(error);

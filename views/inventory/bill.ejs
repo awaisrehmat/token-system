@@ -55,7 +55,7 @@
       <div class="grand-total"><dt>Total</dt><dd>Rs. <%= sale.grandTotal.toFixed(2) %></dd></div>
     </dl>
     <div class="bill-divider"></div>
-    <p class="bill-footer">Thank you for your purchase.</p>
+    <p class="bill-footer"><%= receiptFooter %></p>
   </article>
 
   <% if (String(query.print || '') === '1') { %>

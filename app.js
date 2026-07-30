@@ -10,6 +10,7 @@ const patientRoutes = require('./routes/patientRoutes');
 const consultantRoutes = require('./routes/consultantRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const userRoutes = require('./routes/userRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
 const { dashboard } = require('./controllers/patientController');
 const { requireAuth, requirePermission, hasPermission, showLogin, login, logout } = require('./middleware/auth');
 
@@ -102,6 +103,7 @@ app.use('/patients', patientRoutes);
 app.use('/consultants', consultantRoutes);
 app.use('/inventory', inventoryRoutes);
 app.use('/users', requirePermission('users.manage'), userRoutes);
+app.use('/settings', requirePermission('settings.manage'), settingsRoutes);
 
 app.use((req, res) => {
   res.status(404).render('error', {

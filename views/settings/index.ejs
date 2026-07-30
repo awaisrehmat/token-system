@@ -1,0 +1,56 @@
+<%- include('../partials/header') %>
+
+<div class="page-heading mb-4">
+  <h1 class="h3 mb-1">Receipt Settings</h1>
+  <p class="text-secondary mb-0">Manage the clinic heading and footer shown on printed tokens and medicine bills.</p>
+</div>
+
+<% if (errors.length) { %>
+  <div class="alert alert-danger app-alert">
+    <ul class="mb-0"><% errors.forEach((error) => { %><li><%= error %></li><% }) %></ul>
+  </div>
+<% } %>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <form action="/settings/receipt" method="post" class="card app-card">
+      <div class="card-header bg-white py-3">
+        <h2 class="h5 mb-0"><i class="bi bi-receipt me-2 text-primary"></i>Printed Receipt Content</h2>
+      </div>
+      <div class="card-body p-4">
+        <div class="mb-4">
+          <label for="printHeader" class="form-label">Receipt header</label>
+          <input type="text" class="form-control" id="printHeader" name="header" maxlength="120" value="<%= printSetting.header %>" required>
+          <div class="form-text">Used as the clinic name throughout the application and at the top of printed receipts.</div>
+        </div>
+        <div>
+          <label for="printFooter" class="form-label">Receipt footer</label>
+          <textarea class="form-control" id="printFooter" name="footer" maxlength="250" rows="3" required><%= printSetting.footer %></textarea>
+          <div class="form-text">Displayed at the bottom of printed patient tokens and medicine bills.</div>
+        </div>
+      </div>
+      <div class="card-footer bg-white d-flex justify-content-end p-3">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-floppy me-1"></i> Save Settings</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card app-card receipt-preview-card">
+      <div class="card-header bg-white py-3"><h2 class="h5 mb-0">Preview</h2></div>
+      <div class="card-body p-4">
+        <div class="receipt-preview">
+          <h3><%= printSetting.header %></h3>
+          <p>Medicine Sale Receipt</p>
+          <div class="receipt-preview-line"></div>
+          <div class="receipt-preview-row"><span>Invoice</span><strong>INV-260730-001</strong></div>
+          <div class="receipt-preview-row"><span>Total</span><strong>Rs. 950.00</strong></div>
+          <div class="receipt-preview-line"></div>
+          <small><%= printSetting.footer %></small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
