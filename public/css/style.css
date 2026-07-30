@@ -300,6 +300,65 @@ main.container {
   min-height: 2rem;
 }
 
+.sale-detail-modal {
+  border: 0;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.sale-detail-meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.sale-detail-meta > div {
+  display: flex;
+  border: 1px solid var(--app-border);
+  border-radius: 0.75rem;
+  background: #f8fafc;
+  flex-direction: column;
+  padding: 0.8rem;
+}
+
+.sale-detail-meta span,
+.sale-detail-totals span {
+  color: var(--app-muted);
+  font-size: 0.68rem;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.sale-detail-meta strong {
+  margin-top: 0.2rem;
+  color: #334155;
+  font-size: 0.82rem;
+}
+
+.sale-detail-totals {
+  width: min(100%, 22rem);
+  margin-left: auto;
+}
+
+.sale-detail-totals > div {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--app-border);
+  padding: 0.45rem 0;
+}
+
+.sale-detail-totals .grand {
+  border-bottom: 0;
+  color: var(--app-navy);
+  font-size: 1.1rem;
+}
+
+@media (max-width: 767.98px) {
+  .sale-detail-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .sale-row-number {
   width: 3rem;
   color: #94a3b8 !important;

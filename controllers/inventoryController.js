@@ -139,6 +139,7 @@ exports.salesIndex = async (req, res, next) => {
 
     const sales = await Sale.find(query).sort({ createdAt: -1 }).lean();
     const summary = sales.reduce((totals, sale) => {
+      if (sale.status === 'VOID') return totals;
       totals.count += 1;
       totals.amount += sale.grandTotal;
       totals.discount += sale.discountAmount;
@@ -153,6 +154,69 @@ exports.salesIndex = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+};
+
+exports.deleteSale = async (req, res, next) => {
+  try {
+    const sale = await Sale.findOneAndUpdate(
+      { _id: req.params.id, status: { $ne: 'VOID' } },
+      {
+        $set: {
+          status: 'VOID',
+          voidedAt: new Date(),
+          voidedBy: req.session?.username || ''
+        }
+      },
+      { new: true }
+    );
+    if (!sale) {
+      return res.redirect(`/inventory/sales?error=${encodeURIComponent('This sale is already deleted.')}`);
+    }
+
+    const restored = [];
+    const transactionIds = [];
+    try {
+      for (const item of sale.items) {
+        for (const allocation of item.allocations) {
+          const update = await MedicineBatch.updateOne(
+            { _id: allocation.medicineBatch },
+            { $inc: { quantity: allocation.quantity } }
+          );
+          if (!update.modifiedCount) throw new Error(`Batch ${allocation.batchNumber} could not be restored.`);
+          restored.push(allocation);
+          const transaction = await StockTransaction.create({
+            medicineBatch: allocation.medicineBatch,
+            type: 'ADJUSTMENT',
+            quantity: allocation.quantity,
+            reference: `VOID-${sale.invoiceNumber}`,
+            remarks: 'Stock restored from deleted sale',
+            performedBy: req.session?.username || ''
+          });
+          transactionIds.push(transaction._id);
+        }
+      }
+
+    } catch (error) {
+      await Promise.all(restored.map((allocation) =>
+        MedicineBatch.updateOne(
+          { _id: allocation.medicineBatch },
+          { $inc: { quantity: -allocation.quantity } }
+        )
+      ));
+      if (transactionIds.length) {
+        await StockTransaction.deleteMany({ _id: { $in: transactionIds } });
+      }
+      await Sale.updateOne(
+        { _id: sale._id },
+        { $set: { status: 'ACTIVE', voidedAt: null, voidedBy: '' } }
+      );
+      throw error;
+    }
+
+    return res.redirect(`/inventory/sales?message=${encodeURIComponent(`Sale ${sale.invoiceNumber} deleted and stock restored.`)}`);
+  } catch (error) {
+    return next(error);
   }
 };
 

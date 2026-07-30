@@ -24,7 +24,10 @@ const saleSchema = new mongoose.Schema({
   subtotal: { type: Number, required: true, min: 0 },
   discountAmount: { type: Number, required: true, min: 0 },
   grandTotal: { type: Number, required: true, min: 0 },
-  performedBy: { type: String, trim: true, default: '' }
+  performedBy: { type: String, trim: true, default: '' },
+  status: { type: String, enum: ['ACTIVE', 'VOID'], default: 'ACTIVE' },
+  voidedAt: { type: Date, default: null },
+  voidedBy: { type: String, trim: true, default: '' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Sale', saleSchema);
