@@ -245,6 +245,53 @@ main.container {
   white-space: normal;
 }
 
+.role-access-list > div {
+  margin-top: 0.8rem;
+}
+
+.role-access-list dt {
+  color: #334155;
+  font-size: 0.82rem;
+}
+
+.role-access-list dd {
+  margin: 0.15rem 0 0;
+  color: var(--app-muted);
+  font-size: 0.75rem;
+}
+
+.role-badge {
+  border: 1px solid transparent;
+}
+
+.role-admin {
+  border-color: #ddd6fe;
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.role-receptionist {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.role-pharmacist {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.user-password-input {
+  width: 9rem;
+  min-height: 2rem;
+}
+
+.user-role-select {
+  width: 8.5rem;
+  min-height: 2rem;
+}
+
 .sale-row-number {
   width: 3rem;
   color: #94a3b8 !important;

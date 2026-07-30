@@ -9,8 +9,9 @@ const PrintSetting = require('./models/PrintSetting');
 const patientRoutes = require('./routes/patientRoutes');
 const consultantRoutes = require('./routes/consultantRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
+const userRoutes = require('./routes/userRoutes');
 const { dashboard } = require('./controllers/patientController');
-const { requireAuth, showLogin, login, logout } = require('./middleware/auth');
+const { requireAuth, requirePermission, hasPermission, showLogin, login, logout } = require('./middleware/auth');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -52,6 +53,9 @@ app.use((req, res, next) => {
   res.locals.errorMessage = req.query.error || '';
   res.locals.query = req.query;
   res.locals.currentUser = req.session?.username || '';
+  res.locals.displayName = req.session?.displayName || req.session?.username || '';
+  res.locals.currentRole = req.session?.role || '';
+  res.locals.can = (permission) => hasPermission(req, permission);
   next();
 });
 
@@ -81,11 +85,23 @@ app.use(async (req, res, next) => {
 app.get('/login', showLogin);
 app.post('/login', login);
 app.use(requireAuth);
+app.use((req, res, next) => {
+  res.locals.currentUser = req.session.username || '';
+  res.locals.displayName = req.session.displayName || req.session.username || '';
+  res.locals.currentRole = req.session.role || '';
+  next();
+});
 app.post('/logout', logout);
-app.get('/', dashboard);
+app.get('/', (req, res, next) => {
+  if (!hasPermission(req, 'patients.manage') && hasPermission(req, 'inventory.view')) {
+    return res.redirect('/inventory');
+  }
+  return dashboard(req, res, next);
+});
 app.use('/patients', patientRoutes);
 app.use('/consultants', consultantRoutes);
 app.use('/inventory', inventoryRoutes);
+app.use('/users', requirePermission('users.manage'), userRoutes);
 
 app.use((req, res) => {
   res.status(404).render('error', {

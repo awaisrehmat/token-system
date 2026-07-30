@@ -1,7 +1,9 @@
 const express = require('express');
 const patientController = require('../controllers/patientController');
+const { requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
+router.use(requirePermission('patients.manage'));
 
 router.get('/', patientController.index);
 router.get('/new', patientController.newForm);

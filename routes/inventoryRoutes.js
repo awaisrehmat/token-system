@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const inventoryController = require('../controllers/inventoryController');
+const { requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
 const upload = multer({
@@ -14,13 +15,13 @@ const upload = multer({
   }
 });
 
-router.get('/', inventoryController.index);
-router.get('/sales', inventoryController.salesIndex);
-router.get('/sales/:id/bill', inventoryController.saleBill);
-router.get('/sale', inventoryController.showSale);
-router.post('/sale', inventoryController.createSale);
-router.get('/upload', inventoryController.showUpload);
-router.get('/upload/template', inventoryController.downloadTemplate);
-router.post('/upload', upload.single('medicineFile'), inventoryController.uploadMedicines);
+router.get('/', requirePermission('inventory.view'), inventoryController.index);
+router.get('/sales', requirePermission('sales.manage'), inventoryController.salesIndex);
+router.get('/sales/:id/bill', requirePermission('sales.manage'), inventoryController.saleBill);
+router.get('/sale', requirePermission('sales.manage'), inventoryController.showSale);
+router.post('/sale', requirePermission('sales.manage'), inventoryController.createSale);
+router.get('/upload', requirePermission('stock.upload'), inventoryController.showUpload);
+router.get('/upload/template', requirePermission('stock.upload'), inventoryController.downloadTemplate);
+router.post('/upload', requirePermission('stock.upload'), upload.single('medicineFile'), inventoryController.uploadMedicines);
 
 module.exports = router;

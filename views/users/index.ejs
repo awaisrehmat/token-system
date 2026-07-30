@@ -1,0 +1,114 @@
+<%- include('../partials/header') %>
+
+<div class="page-heading d-flex flex-wrap gap-3 justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 mb-1">Users &amp; Permissions</h1>
+    <p class="text-secondary mb-0">Create staff accounts and control access by role</p>
+  </div>
+</div>
+
+<% if (errors.length) { %>
+  <div class="alert alert-danger app-alert">
+    <ul class="mb-0"><% errors.forEach((error) => { %><li><%= error %></li><% }) %></ul>
+  </div>
+<% } %>
+
+<div class="row g-4">
+  <div class="col-xl-4">
+    <div class="card app-card">
+      <div class="card-header bg-white py-3">
+        <h2 class="h5 mb-0"><i class="bi bi-person-plus me-2 text-primary"></i>Add User</h2>
+      </div>
+      <div class="card-body p-4">
+        <form action="/users" method="post">
+          <div class="mb-3">
+            <label for="name" class="form-label">Full name</label>
+            <input class="form-control" id="name" name="name" maxlength="100" value="<%= form.name || '' %>" required>
+          </div>
+          <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input class="form-control" id="username" name="username" maxlength="60" value="<%= form.username || '' %>" pattern="[A-Za-z0-9._-]{3,60}" required>
+          </div>
+          <div class="mb-3">
+            <label for="role" class="form-label">Role</label>
+            <select class="form-select" id="role" name="role" required>
+              <option value="">Select role</option>
+              <% Object.entries(roleLabels).forEach(([value, label]) => { %>
+                <option value="<%= value %>" <%= form.role === value ? 'selected' : '' %>><%= label %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="mb-4">
+            <label for="password" class="form-label">Temporary password</label>
+            <input class="form-control" type="password" id="password" name="password" minlength="8" autocomplete="new-password" required>
+            <div class="form-text">At least 8 characters.</div>
+          </div>
+          <button class="btn btn-primary w-100" type="submit"><i class="bi bi-person-check me-1"></i> Create User</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card app-card mt-4">
+      <div class="card-body p-4">
+        <h2 class="h6">Role access</h2>
+        <dl class="role-access-list mb-0">
+          <div><dt>Admin</dt><dd>Full application and user management</dd></div>
+          <div><dt>Receptionist</dt><dd>Patients, tokens, and physician viewing</dd></div>
+          <div><dt>Pharmacist</dt><dd>Stock upload, inventory, sales, and bills</dd></div>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-8">
+    <div class="card app-card">
+      <div class="card-header bg-white py-3">
+        <h2 class="h5 mb-0"><i class="bi bi-people me-2 text-primary"></i>Staff Accounts</h2>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr><th>User</th><th>Role</th><th>Status</th><th>Last Login</th><th class="text-end">Actions</th></tr>
+          </thead>
+          <tbody>
+            <% if (!users.length) { %>
+              <tr><td colspan="5" class="text-center text-secondary py-5">No database users yet. The environment Admin login is still active.</td></tr>
+            <% } %>
+            <% users.forEach((user) => { %>
+              <tr>
+                <td><strong><%= user.name %></strong><div class="text-secondary small">@<%= user.username %></div></td>
+                <td>
+                  <form action="/users/<%= user._id %>/role" method="post" class="d-flex gap-1">
+                    <select class="form-select form-select-sm user-role-select" name="role" aria-label="Role for <%= user.name %>">
+                      <% Object.entries(roleLabels).forEach(([value, label]) => { %>
+                        <option value="<%= value %>" <%= user.role === value ? 'selected' : '' %>><%= label %></option>
+                      <% }) %>
+                    </select>
+                    <button class="btn btn-outline-secondary btn-sm" type="submit">Save</button>
+                  </form>
+                </td>
+                <td><span class="badge <%= user.isActive ? 'text-bg-success' : 'text-bg-secondary' %>"><%= user.isActive ? 'Active' : 'Inactive' %></span></td>
+                <td class="text-nowrap"><%= user.lastLoginAt ? user.lastLoginAt.toLocaleString('en-PK') : 'Never' %></td>
+                <td>
+                  <div class="d-flex flex-wrap justify-content-end gap-2">
+                    <form action="/users/<%= user._id %>/reset-password" method="post" class="d-flex gap-1">
+                      <input class="form-control form-control-sm user-password-input" type="password" name="password" minlength="8" placeholder="New password" aria-label="New password" required>
+                      <button class="btn btn-outline-primary btn-sm" type="submit">Reset</button>
+                    </form>
+                    <form action="/users/<%= user._id %>/toggle-status" method="post">
+                      <button class="btn btn-outline-<%= user.isActive ? 'danger' : 'success' %> btn-sm" type="submit">
+                        <%= user.isActive ? 'Deactivate' : 'Activate' %>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -30,40 +30,63 @@
           </a>
         </div>
 
+        <% if (can('patients.manage') || can('physicians.view') || can('physicians.manage')) { %>
         <div class="sidebar-section">
           <span class="sidebar-label">Clinic</span>
+          <% if (can('patients.manage')) { %>
           <a class="sidebar-link <%= currentPath === '/patients/new' ? 'active' : '' %>" href="/patients/new">
             <i class="bi bi-person-plus"></i><span>Register Patient</span>
           </a>
           <a class="sidebar-link <%= currentPath === '/patients' || (/^\/patients\/[^/]+/.test(currentPath) && currentPath !== '/patients/new') ? 'active' : '' %>" href="/patients">
             <i class="bi bi-people"></i><span>Patients</span>
           </a>
+          <% } %>
+          <% if (can('physicians.view') || can('physicians.manage')) { %>
           <a class="sidebar-link <%= currentPath === '/consultants' ? 'active' : '' %>" href="/consultants">
             <i class="bi bi-person-badge"></i><span>Physicians</span>
           </a>
+          <% } %>
         </div>
+        <% } %>
 
+        <% if (can('inventory.view') || can('sales.manage') || can('stock.upload')) { %>
         <div class="sidebar-section">
           <span class="sidebar-label">Pharmacy</span>
+          <% if (can('inventory.view')) { %>
           <a class="sidebar-link <%= currentPath === '/inventory' ? 'active' : '' %>" href="/inventory">
             <i class="bi bi-box-seam"></i><span>Medicine Stock</span>
           </a>
+          <% } %>
+          <% if (can('sales.manage')) { %>
           <a class="sidebar-link <%= currentPath === '/inventory/sale' ? 'active' : '' %>" href="/inventory/sale">
             <i class="bi bi-cart-plus"></i><span>New Sale</span>
           </a>
           <a class="sidebar-link <%= currentPath === '/inventory/sales' ? 'active' : '' %>" href="/inventory/sales">
             <i class="bi bi-receipt"></i><span>Sales History</span>
           </a>
+          <% } %>
+          <% if (can('stock.upload')) { %>
           <a class="sidebar-link <%= currentPath === '/inventory/upload' ? 'active' : '' %>" href="/inventory/upload">
             <i class="bi bi-cloud-arrow-up"></i><span>Upload Stock</span>
           </a>
+          <% } %>
         </div>
+        <% } %>
+
+        <% if (can('users.manage')) { %>
+        <div class="sidebar-section">
+          <span class="sidebar-label">Administration</span>
+          <a class="sidebar-link <%= currentPath.startsWith('/users') ? 'active' : '' %>" href="/users">
+            <i class="bi bi-shield-lock"></i><span>Users &amp; Permissions</span>
+          </a>
+        </div>
+        <% } %>
       </nav>
 
       <div class="sidebar-footer">
         <div class="sidebar-user">
           <span class="sidebar-user-avatar"><i class="bi bi-person"></i></span>
-          <span><small>Signed in as</small><strong><%= currentUser || 'Admin' %></strong></span>
+          <span><small><%= currentRole || 'Account' %></small><strong><%= displayName || currentUser || 'Admin' %></strong></span>
         </div>
         <form action="/logout" method="post">
           <button type="submit" class="sidebar-logout" title="Sign out" aria-label="Sign out"><i class="bi bi-box-arrow-right"></i></button>
@@ -83,7 +106,7 @@
           <p class="admin-topbar-title mb-0"><%= title %></p>
         </div>
         <div class="admin-topbar-user ms-auto">
-          <span class="admin-status-dot"></span><span><%= currentUser || 'Admin' %></span>
+          <span class="admin-status-dot"></span><span><%= displayName || currentUser || 'Admin' %></span>
         </div>
       </header>
 
