@@ -115,7 +115,7 @@ exports.showSale = async (req, res, next) => {
     res.render('inventory/sale', {
       title: 'New Medicine Sale',
       medicines: await availableMedicines(),
-      form: { customerName: '', items: Array.from({ length: 8 }, () => ({})) },
+      form: { customerName: '', items: Array.from({ length: 4 }, () => ({})) },
       errors: []
     });
   } catch (error) {

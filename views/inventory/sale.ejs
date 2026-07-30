@@ -29,17 +29,19 @@
         <span class="sale-sheet-kicker">Sales invoice</span>
         <h2 class="h5 mb-0">Medicine Entry Sheet</h2>
       </div>
-      <div class="sale-customer-field">
-        <label for="customerName" class="form-label">Customer</label>
-        <input
-          type="text"
-          class="form-control"
-          id="customerName"
-          name="customerName"
-          maxlength="100"
-          value="<%= form.customerName || '' %>"
-          placeholder="Walk-in customer"
-        >
+      <div class="sale-sheet-header-actions">
+        <div class="sale-customer-field">
+          <label for="customerName" class="form-label">Customer</label>
+          <input
+            type="text"
+            class="form-control"
+            id="customerName"
+            name="customerName"
+            maxlength="100"
+            value="<%= form.customerName || '' %>"
+            placeholder="Walk-in customer"
+          >
+        </div>
       </div>
     </div>
 
@@ -57,7 +59,7 @@
           </tr>
         </thead>
         <tbody id="saleItems">
-          <% Array.from({ length: Math.max(8, form.items.length) }, (_, index) => form.items[index] || {}).forEach((item, index) => { %>
+          <% Array.from({ length: Math.max(4, form.items.length) }, (_, index) => form.items[index] || {}).forEach((item, index) => { %>
             <tr class="sale-item-row">
               <td class="sale-row-number"><%= index + 1 %></td>
               <td>
@@ -108,6 +110,12 @@
       </table>
     </div>
 
+    <div class="sale-add-row">
+      <button type="button" class="btn btn-outline-primary btn-sm" id="addSaleItem">
+        <i class="bi bi-plus-lg me-1"></i> Add Item
+      </button>
+    </div>
+
     <div class="sale-sheet-footer">
       <p class="text-secondary small mb-0">
         <i class="bi bi-arrow-down-up me-1"></i> Stock is issued from the earliest-expiring batch.
@@ -123,9 +131,35 @@
   </div>
 </form>
 
+<template id="saleRowTemplate">
+  <tr class="sale-item-row">
+    <td class="sale-row-number"></td>
+    <td>
+      <select class="form-select medicine-select">
+        <option value="">Select medicine</option>
+        <% medicines.forEach((medicine) => { %>
+          <option value="<%= medicine._id %>" data-price="<%= medicine.retailPrice %>" data-stock="<%= medicine.availableQuantity %>"><%= medicine._id %></option>
+        <% }) %>
+      </select>
+      <div class="invalid-feedback medicine-error"></div>
+    </td>
+    <td class="sale-stock-cell text-end">—</td>
+    <td class="sale-price-cell text-end">—</td>
+    <td>
+      <input class="form-control quantity-input" type="number" min="0.01" step="0.01" placeholder="0">
+      <div class="invalid-feedback quantity-error"></div>
+    </td>
+    <td>
+      <input class="form-control discount-input" type="number" min="0" max="100" step="0.01" placeholder="0">
+      <div class="invalid-feedback discount-error"></div>
+    </td>
+    <td class="sale-line-total text-end">Rs. 0.00</td>
+  </tr>
+</template>
+
 <script>
   const saleForm = document.getElementById('saleForm');
-  const rows = [...document.querySelectorAll('.sale-item-row')];
+  const saleItems = document.getElementById('saleItems');
   const clientSaleError = document.getElementById('clientSaleError');
 
   function setFieldError(field, message, feedback) {
@@ -135,6 +169,7 @@
   }
 
   function refreshSheet(showEmptyErrors = false) {
+    const rows = [...document.querySelectorAll('.sale-item-row')];
     let grandTotal = 0;
     let hasErrors = false;
 
@@ -142,10 +177,14 @@
       .map((row) => row.querySelector('.medicine-select').value)
       .filter(Boolean);
 
-    rows.forEach((row) => {
+    rows.forEach((row, index) => {
       const medicineSelect = row.querySelector('.medicine-select');
       const quantityInput = row.querySelector('.quantity-input');
       const discountInput = row.querySelector('.discount-input');
+      row.querySelector('.sale-row-number').textContent = index + 1;
+      medicineSelect.name = `items[${index}][medicineName]`;
+      quantityInput.name = `items[${index}][quantity]`;
+      discountInput.name = `items[${index}][discountPercent]`;
       const option = medicineSelect.selectedOptions[0];
       const price = Number(option?.dataset.price || 0);
       const stock = Number(option?.dataset.stock || 0);
@@ -208,9 +247,15 @@
     return hasErrors;
   }
 
-  document.getElementById('saleItems').addEventListener('input', () => refreshSheet());
-  document.getElementById('saleItems').addEventListener('change', () => refreshSheet());
+  saleItems.addEventListener('input', () => refreshSheet());
+  saleItems.addEventListener('change', () => refreshSheet());
+  document.getElementById('addSaleItem').addEventListener('click', () => {
+    saleItems.appendChild(document.getElementById('saleRowTemplate').content.cloneNode(true));
+    refreshSheet();
+    saleItems.querySelector('.sale-item-row:last-child .medicine-select').focus();
+  });
   saleForm.addEventListener('submit', (event) => {
+    const rows = [...document.querySelectorAll('.sale-item-row')];
     const hasMedicine = rows.some((row) => row.querySelector('.medicine-select').value);
     const hasErrors = refreshSheet(true);
 

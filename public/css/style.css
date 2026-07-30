@@ -201,6 +201,14 @@ main.container {
   width: min(100%, 22rem);
 }
 
+.sale-sheet-header-actions {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex: 1;
+}
+
 .sale-customer-field .form-label {
   margin-bottom: 0.25rem;
 }
@@ -328,6 +336,12 @@ main.container {
   background: #fff;
 }
 
+.sale-add-row {
+  border-top: 1px solid var(--app-border);
+  background: #f8fafc;
+  padding: 0.75rem 1rem;
+}
+
 .sale-sheet-footer > p {
   margin-right: auto;
 }
@@ -354,6 +368,12 @@ main.container {
 @media (max-width: 767.98px) {
   .sale-sheet-header,
   .sale-sheet-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sale-sheet-header-actions {
+    width: 100%;
     align-items: stretch;
     flex-direction: column;
   }
