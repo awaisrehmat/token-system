@@ -6,6 +6,23 @@ document.querySelectorAll('.delete-form').forEach((form) => {
   });
 });
 
+const sidebar = document.querySelector('#adminSidebar');
+const sidebarToggle = document.querySelector('#sidebarToggle');
+const sidebarBackdrop = document.querySelector('#sidebarBackdrop');
+
+function setSidebar(open) {
+  document.body.classList.toggle('sidebar-open', open);
+  sidebarToggle?.setAttribute('aria-expanded', String(open));
+}
+
+sidebarToggle?.addEventListener('click', () => {
+  setSidebar(!document.body.classList.contains('sidebar-open'));
+});
+sidebarBackdrop?.addEventListener('click', () => setSidebar(false));
+sidebar?.querySelectorAll('a').forEach((link) => {
+  link.addEventListener('click', () => setSidebar(false));
+});
+
 const cnicInput = document.querySelector('#cnic');
 if (cnicInput) {
   const formatCnic = () => {
