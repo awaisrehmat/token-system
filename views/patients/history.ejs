@@ -7,6 +7,7 @@
       <strong><%= patient.mrNumber %></strong> · <%= patient.patientName %>
       <% if (patient.relationType && patient.relativeName) { %> · <%= patient.relationType %> <%= patient.relativeName %><% } %>
     </p>
+    <p class="text-secondary small mb-0">Age: <%= patient.age %> years, <%= patient.ageMonths || 0 %> months</p>
   </div>
   <a href="/patients" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Patient List</a>
 </div>

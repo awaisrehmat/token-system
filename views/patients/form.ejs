@@ -47,9 +47,13 @@
         <label for="relativeName" class="form-label">Father / Husband Name</label>
         <input type="text" class="form-control" id="relativeName" name="relativeName" maxlength="100" value="<%= patient.relativeName || '' %>" required>
       </div>
-      <div class="col-md-3">
-        <label for="age" class="form-label">Age</label>
-        <input type="number" class="form-control" id="age" name="age" min="0" max="130" value="<%= patient.age ?? '' %>" required>
+      <div class="col-md-2">
+        <label for="age" class="form-label">Age (years)</label>
+        <input type="number" class="form-control" id="age" name="age" min="0" max="130" value="<%= patient.age ?? 0 %>" required>
+      </div>
+      <div class="col-md-2">
+        <label for="ageMonths" class="form-label">Age (months)</label>
+        <input type="number" class="form-control" id="ageMonths" name="ageMonths" min="0" max="12" step="1" value="<%= patient.ageMonths ?? 0 %>" required>
       </div>
       <div class="col-md-3">
         <label for="sex" class="form-label">Sex</label>

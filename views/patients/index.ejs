@@ -53,7 +53,7 @@
                 <div class="small text-secondary"><%= patient.relationType %> <%= patient.relativeName %></div>
               <% } %>
             </td>
-            <td><%= patient.age %></td>
+            <td class="text-nowrap"><%= patient.age %>y <%= patient.ageMonths || 0 %>m</td>
             <td><%= patient.sex %></td>
             <td class="text-nowrap"><%= formatCnic(patient.cnic) %></td>
             <td class="text-nowrap"><%= patient.contactNumber %></td>

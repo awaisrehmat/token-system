@@ -40,6 +40,7 @@ function patientValues(body = {}) {
     relationType: String(body.relationType || '').trim().toUpperCase(),
     relativeName: String(body.relativeName || '').trim(),
     age: body.age,
+    ageMonths: body.ageMonths,
     sex: body.sex,
     cnic: normalizeCnic(body.cnic),
     contactNumber: String(body.contactNumber || '').trim(),
@@ -57,7 +58,10 @@ function validatePatient(data) {
   if (!['S/O', 'W/O', 'D/O'].includes(data.relationType)) errors.push('Please select S/O, W/O, or D/O.');
   if (!data.relativeName) errors.push('Father or husband name is required.');
   if (data.age === '' || Number.isNaN(Number(data.age)) || Number(data.age) < 0 || Number(data.age) > 130) {
-    errors.push('Age must be between 0 and 130.');
+    errors.push('Age in years must be between 0 and 130.');
+  }
+  if (data.ageMonths === '' || !Number.isInteger(Number(data.ageMonths)) || Number(data.ageMonths) < 0 || Number(data.ageMonths) > 12) {
+    errors.push('Age in months must be between 0 and 12.');
   }
   if (!['Male', 'Female', 'Other'].includes(data.sex)) errors.push('Please select a valid sex.');
   if (!/^\d{13}$/.test(data.cnic)) errors.push('CNIC must contain exactly 13 digits.');
@@ -225,6 +229,7 @@ exports.revisit = async (req, res, next) => {
       relationType: previousVisit.relationType || '',
       relativeName: previousVisit.relativeName || '',
       age: previousVisit.age,
+      ageMonths: previousVisit.ageMonths || 0,
       sex: previousVisit.sex,
       cnic: previousVisit.cnic,
       contactNumber: previousVisit.contactNumber,

@@ -10,7 +10,8 @@ const patientSchema = new mongoose.Schema(
     patientName: { type: String, required: true, trim: true, maxlength: 100 },
     relationType: { type: String, enum: ['S/O', 'W/O', 'D/O', ''], default: '' },
     relativeName: { type: String, trim: true, maxlength: 100, default: '' },
-    age: { type: Number, required: true, min: 0, max: 130 },
+    age: { type: Number, required: true, min: 0, max: 130, default: 0 },
+    ageMonths: { type: Number, required: true, min: 0, max: 12, default: 0 },
     sex: { type: String, required: true, enum: ['Male', 'Female', 'Other'] },
     cnic: {
       type: String,
