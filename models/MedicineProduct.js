@@ -7,7 +7,8 @@ const medicineProductSchema = new mongoose.Schema({
   looseUnit: { type: String, required: true, trim: true, default: 'Unit' },
   unitsPerPack: { type: Number, required: true, min: 1, default: 1 },
   allowLooseSale: { type: Boolean, default: false },
-  packagingStatus: { type: String, enum: ['ACTIVE', 'CONFLICT'], default: 'ACTIVE' }
+  packagingStatus: { type: String, enum: ['ACTIVE', 'CONFLICT'], default: 'ACTIVE' },
+  pricingStatus: { type: String, enum: ['ACTIVE', 'CONFLICT'], default: 'ACTIVE' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('MedicineProduct', medicineProductSchema);

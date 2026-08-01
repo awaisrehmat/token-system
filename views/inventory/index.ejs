@@ -109,7 +109,7 @@
           const nearExpiry = !expired && group.batches.some((batch) => batch.quantity > 0 && batch.expiryDate <= new Date(Date.now() + 90 * 24 * 60 * 60 * 1000));
         %>
           <tr>
-            <td><strong><%= product?.name || group.batches[0].medicineName %></strong><div class="small text-secondary"><% if (product?.packagingStatus === 'CONFLICT') { %>Packaging needs review<% } else { %>1 <%= product?.packUnit || 'pack' %> = <%= product?.unitsPerPack || 1 %> <%= product?.looseUnit || 'unit' %>(s)<% } %></div></td>
+            <td><strong><%= product?.name || group.batches[0].medicineName %></strong><div class="small text-secondary"><% if (product?.packagingStatus === 'CONFLICT') { %>Packaging needs review<% } else if (product?.pricingStatus === 'CONFLICT') { %>Selling price needs review<% } else { %>1 <%= product?.packUnit || 'pack' %> = <%= product?.unitsPerPack || 1 %> <%= product?.looseUnit || 'unit' %>(s)<% } %></div></td>
             <td><strong><%= formatStock(group.quantity, product) %></strong></td>
             <td class="text-center"><span class="badge text-bg-light border"><%= group.batches.length %></span></td>
             <td class="text-nowrap"><%= group.nextExpiry?.toISOString().slice(0, 10) || '—' %></td>
@@ -117,6 +117,8 @@
             <td>
               <% if (product?.packagingStatus === 'CONFLICT') { %>
                 <span class="badge text-bg-danger">Packaging conflict</span>
+              <% } else if (product?.pricingStatus === 'CONFLICT') { %>
+                <span class="badge text-bg-warning">Price conflict</span>
               <% } else if (group.quantity <= 0) { %>
                 <span class="badge text-bg-secondary">Out of stock</span>
               <% } else if (expired) { %>

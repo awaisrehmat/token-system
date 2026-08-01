@@ -35,6 +35,13 @@ function packagingSignature(batch) {
   ].join('|');
 }
 
+function pricingSignature(batch) {
+  return [
+    Number(batch.retailPrice || 0).toFixed(4),
+    batch.allowLooseSale ? Number(batch.looseRetailPrice || 0).toFixed(4) : 'not-allowed'
+  ].join('|');
+}
+
 async function ensureProductCatalog() {
   const batches = await MedicineBatch.find().sort({ createdAt: 1 }).lean();
   const groups = new Map();
@@ -47,6 +54,7 @@ async function ensureProductCatalog() {
   for (const [normalizedName, productBatches] of groups) {
     const reference = productBatches[0];
     const conflict = new Set(productBatches.map(packagingSignature)).size > 1;
+    const priceConflict = new Set(productBatches.map(pricingSignature)).size > 1;
     let product = await MedicineProduct.findOne({ normalizedName });
     if (!product) {
       try {
@@ -57,15 +65,27 @@ async function ensureProductCatalog() {
           looseUnit: reference.looseUnit || 'Unit',
           unitsPerPack: reference.unitsPerPack || 1,
           allowLooseSale: Boolean(reference.allowLooseSale),
-          packagingStatus: conflict ? 'CONFLICT' : 'ACTIVE'
+          packagingStatus: conflict ? 'CONFLICT' : 'ACTIVE',
+          pricingStatus: priceConflict ? 'CONFLICT' : 'ACTIVE'
         });
       } catch (error) {
         if (error.code !== 11000) throw error;
         product = await MedicineProduct.findOne({ normalizedName });
       }
-    } else if ((conflict ? 'CONFLICT' : product.packagingStatus) !== product.packagingStatus) {
-      product.packagingStatus = 'CONFLICT';
-      await product.save();
+    } else {
+      let changed = false;
+      if (conflict && product.packagingStatus !== 'CONFLICT') {
+        product.packagingStatus = 'CONFLICT';
+        changed = true;
+      }
+      if (priceConflict && product.pricingStatus !== 'CONFLICT') {
+        product.pricingStatus = 'CONFLICT';
+        changed = true;
+      } else if (!priceConflict && !product.pricingStatus) {
+        product.pricingStatus = 'ACTIVE';
+        changed = true;
+      }
+      if (changed) await product.save();
     }
     await MedicineBatch.updateMany(
       { _id: { $in: productBatches.map((batch) => batch._id) }, product: { $ne: product._id } },
@@ -193,6 +213,27 @@ exports.resolvePackaging = async (req, res, next) => {
     Object.assign(product, packaging, { packagingStatus: 'ACTIVE' });
     await product.save();
     return res.redirect(`/inventory/products/${product._id}?message=${encodeURIComponent('Packaging conflict resolved successfully.')}`);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.resolvePricing = async (req, res, next) => {
+  try {
+    const product = await MedicineProduct.findById(req.params.id);
+    const sourceBatch = await MedicineBatch.findOne({ _id: req.body.batchId, product: req.params.id });
+    if (!product || !sourceBatch) return res.redirect(`/inventory?error=${encodeURIComponent('Product or selected batch was not found.')}`);
+    if (product.packagingStatus === 'CONFLICT') {
+      return res.redirect(`/inventory/products/${product._id}?error=${encodeURIComponent('Resolve the packaging conflict before selecting a selling price.')}`);
+    }
+    const pricing = {
+      retailPrice: sourceBatch.retailPrice,
+      looseRetailPrice: sourceBatch.allowLooseSale ? sourceBatch.looseRetailPrice : 0
+    };
+    await MedicineBatch.updateMany({ product: product._id }, { $set: pricing });
+    product.pricingStatus = 'ACTIVE';
+    await product.save();
+    return res.redirect(`/inventory/products/${product._id}?message=${encodeURIComponent(`Selling price from batch ${sourceBatch.batchNumber} is now active.`)}`);
   } catch (error) {
     next(error);
   }
@@ -360,7 +401,7 @@ async function availableMedicines() {
   await ensureProductCatalog();
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
-  const products = await MedicineProduct.find({ packagingStatus: 'ACTIVE' }).sort({ name: 1 }).lean();
+  const products = await MedicineProduct.find({ packagingStatus: 'ACTIVE', pricingStatus: { $ne: 'CONFLICT' } }).sort({ name: 1 }).lean();
   const batches = await MedicineBatch.find({
     product: { $in: products.map((product) => product._id) },
     quantity: { $gt: 0 },
@@ -644,8 +685,8 @@ exports.createSale = async (req, res, next) => {
     if (!errors.length) {
       for (const item of items) {
         const productRecord = await MedicineProduct.findOne({ normalizedName: normalizeMedicineName(item.medicineName) }).lean();
-        if (!productRecord || productRecord.packagingStatus !== 'ACTIVE') {
-          errors.push(`${item.medicineName}: packaging must be resolved before sale.`);
+        if (!productRecord || productRecord.packagingStatus !== 'ACTIVE' || productRecord.pricingStatus === 'CONFLICT') {
+          errors.push(`${item.medicineName}: packaging or selling-price conflict must be resolved before sale.`);
           continue;
         }
         const batches = await MedicineBatch.find({
@@ -898,7 +939,8 @@ exports.uploadMedicines = async (req, res, next) => {
       });
     }
 
-    return res.redirect(`/inventory/upload?message=${encodeURIComponent(`${imported.length} medicine rows imported successfully.`)}`);
+    await ensureProductCatalog();
+    return res.redirect(`/inventory?message=${encodeURIComponent(`${imported.length} medicine rows imported. Review any highlighted packaging or price conflicts before sale.`)}`);
   } catch (error) {
     next(error);
   }
