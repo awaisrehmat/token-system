@@ -55,7 +55,7 @@ exports.index = async (req, res, next) => {
 
     const summary = batches.reduce((totals, batch) => {
       totals.quantity += batch.quantity;
-      totals.stockValue += batch.quantity * batch.purchasePrice;
+      totals.stockValue += (batch.quantity / (batch.unitsPerPack || 1)) * batch.purchasePrice;
       if (batch.quantity > 0 && batch.expiryDate < new Date()) totals.expired += 1;
       return totals;
     }, { quantity: 0, stockValue: 0, expired: 0 });
@@ -67,7 +67,14 @@ exports.index = async (req, res, next) => {
       stockStatus,
       expiryStatus,
       sort,
-      summary
+      summary,
+      formatStock: (batch) => {
+        const unitsPerPack = batch.unitsPerPack || 1;
+        const packs = Math.floor(batch.quantity / unitsPerPack);
+        const loose = batch.quantity % unitsPerPack;
+        if (unitsPerPack === 1) return `${batch.quantity} ${batch.looseUnit || 'unit'}`;
+        return `${packs} ${batch.packUnit || 'pack'}${packs === 1 ? '' : 's'} + ${loose} ${batch.looseUnit || 'unit'}${loose === 1 ? '' : 's'}`;
+      }
     });
   } catch (error) {
     next(error);
@@ -133,14 +140,24 @@ exports.addStock = async (req, res, next) => {
     medicineName: String(req.body.medicineName || '').trim(),
     batchNumber: String(req.body.batchNumber || '').trim(),
     expiryDate: String(req.body.expiryDate || '').trim(),
-    quantity: String(req.body.quantity || '').trim(),
+    packsReceived: String(req.body.packsReceived || '0').trim(),
+    looseReceived: String(req.body.looseReceived || '0').trim(),
+    packUnit: String(req.body.packUnit || 'Box').trim(),
+    looseUnit: String(req.body.looseUnit || 'Unit').trim(),
+    unitsPerPack: String(req.body.unitsPerPack || '1').trim(),
+    allowLooseSale: req.body.allowLooseSale === 'on',
     purchasePrice: String(req.body.purchasePrice || '').trim(),
     retailPrice: String(req.body.retailPrice || '').trim(),
+    looseRetailPrice: String(req.body.looseRetailPrice || '0').trim(),
     reference: String(req.body.reference || '').trim()
   };
-  const quantity = Number(form.quantity);
+  const packsReceived = Number(form.packsReceived);
+  const looseReceived = Number(form.looseReceived);
+  const unitsPerPack = Number(form.unitsPerPack);
   const purchasePrice = Number(form.purchasePrice);
   const retailPrice = Number(form.retailPrice);
+  const looseRetailPrice = Number(form.looseRetailPrice);
+  const quantity = packsReceived * unitsPerPack + looseReceived;
   const expiryDate = new Date(`${form.expiryDate}T00:00:00.000Z`);
   const errors = [];
 
@@ -149,9 +166,16 @@ exports.addStock = async (req, res, next) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(form.expiryDate) || Number.isNaN(expiryDate.getTime())) {
     errors.push('Enter a valid expiry date.');
   }
-  if (!Number.isFinite(quantity) || quantity <= 0) errors.push('Quantity must be greater than zero.');
+  if (!form.packUnit) errors.push('Pack unit is required.');
+  if (!form.looseUnit) errors.push('Loose unit is required.');
+  if (!Number.isInteger(unitsPerPack) || unitsPerPack < 1) errors.push('Units per pack must be a whole number of at least 1.');
+  if (!Number.isInteger(packsReceived) || packsReceived < 0) errors.push('Packs received must be zero or greater.');
+  if (!Number.isInteger(looseReceived) || looseReceived < 0) errors.push('Loose quantity must be zero or greater.');
+  if (Number.isFinite(unitsPerPack) && looseReceived >= unitsPerPack) errors.push('Loose quantity must be less than units per pack.');
+  if (!Number.isFinite(quantity) || quantity <= 0) errors.push('Enter at least one pack or loose unit.');
   if (!Number.isFinite(purchasePrice) || purchasePrice < 0) errors.push('Purchase price must be zero or greater.');
   if (!Number.isFinite(retailPrice) || retailPrice < 0) errors.push('Retail price must be zero or greater.');
+  if (form.allowLooseSale && (!Number.isFinite(looseRetailPrice) || looseRetailPrice < 0)) errors.push('Loose retail price must be zero or greater.');
 
   try {
     if (errors.length) {
@@ -170,7 +194,15 @@ exports.addStock = async (req, res, next) => {
       },
       {
         $inc: { quantity },
-        $set: { purchasePrice, retailPrice }
+        $set: {
+          purchasePrice,
+          retailPrice,
+          packUnit: form.packUnit,
+          looseUnit: form.looseUnit,
+          unitsPerPack,
+          allowLooseSale: form.allowLooseSale,
+          looseRetailPrice: form.allowLooseSale ? looseRetailPrice : 0
+        }
       },
       { upsert: true, new: true, runValidators: true }
     );
@@ -180,7 +212,7 @@ exports.addStock = async (req, res, next) => {
       type: 'IN',
       quantity,
       reference: form.reference,
-      remarks: 'Manual stock entry',
+      remarks: `${packsReceived} ${form.packUnit}(s) + ${looseReceived} ${form.looseUnit}(s) received`,
       performedBy: req.session?.username || ''
     });
 
@@ -202,6 +234,11 @@ async function availableMedicines() {
         _id: '$medicineName',
         availableQuantity: { $sum: '$quantity' },
         retailPrice: { $first: '$retailPrice' },
+        looseRetailPrice: { $first: '$looseRetailPrice' },
+        packUnit: { $first: '$packUnit' },
+        looseUnit: { $first: '$looseUnit' },
+        unitsPerPack: { $first: '$unitsPerPack' },
+        allowLooseSale: { $first: '$allowLooseSale' },
         nextExpiry: { $first: '$expiryDate' }
       }
     },
@@ -382,11 +419,13 @@ function saleItems(body) {
   return rawItems
     .filter((item) =>
       String(item.medicineName || '').trim() ||
-      String(item.quantity || '').trim()
+      String(item.packQuantity || '').trim() ||
+      String(item.looseQuantity || '').trim()
     )
     .map((item) => ({
       medicineName: String(item.medicineName || '').trim(),
-      quantity: Number(item.quantity),
+      packQuantity: Number(item.packQuantity || 0),
+      looseQuantity: Number(item.looseQuantity || 0),
       discountPercent: Number(item.discountPercent || 0)
     }));
 }
@@ -422,8 +461,10 @@ exports.createSale = async (req, res, next) => {
   if (!items.length) errors.push('Add at least one medicine.');
   for (const [index, item] of items.entries()) {
     if (!item.medicineName) errors.push(`Item ${index + 1}: select a medicine.`);
-    if (!Number.isFinite(item.quantity) || item.quantity <= 0) {
-      errors.push(`Item ${index + 1}: quantity must be greater than zero.`);
+    if (!Number.isInteger(item.packQuantity) || item.packQuantity < 0 ||
+        !Number.isInteger(item.looseQuantity) || item.looseQuantity < 0 ||
+        item.packQuantity + item.looseQuantity <= 0) {
+      errors.push(`Item ${index + 1}: enter a valid pack or loose quantity.`);
     }
     if (!Number.isFinite(item.discountPercent) ||
         item.discountPercent < 0 ||
@@ -450,7 +491,18 @@ exports.createSale = async (req, res, next) => {
           expiryDate: { $gte: today }
         }).sort({ expiryDate: 1, createdAt: 1 }).lean();
 
-        let remaining = item.quantity;
+        const product = batches[0];
+        if (!product) {
+          errors.push(`${item.medicineName}: no usable stock is available.`);
+          continue;
+        }
+        const unitsPerPack = product.unitsPerPack || 1;
+        if (item.looseQuantity > 0 && !product.allowLooseSale) {
+          errors.push(`${item.medicineName}: loose sale is not allowed.`);
+          continue;
+        }
+        let remaining = item.packQuantity * unitsPerPack + item.looseQuantity;
+        const requiredBaseQuantity = remaining;
         const allocations = [];
         for (const batch of batches) {
           if (remaining <= 0) break;
@@ -465,17 +517,22 @@ exports.createSale = async (req, res, next) => {
         }
 
         if (remaining > 0) {
-          errors.push(`${item.medicineName}: only ${item.quantity - remaining} available.`);
+          errors.push(`${item.medicineName}: insufficient stock for the requested packs and loose units.`);
           continue;
         }
 
-        const subtotal = allocations.reduce(
-          (sum, allocation) => sum + allocation.quantity * allocation.retailPrice,
-          0
-        );
+        const subtotal = item.packQuantity * product.retailPrice +
+          item.looseQuantity * (product.looseRetailPrice || product.retailPrice / unitsPerPack);
         const discountAmount = subtotal * item.discountPercent / 100;
         preparedItems.push({
           ...item,
+          quantity: requiredBaseQuantity,
+          baseQuantity: requiredBaseQuantity,
+          packUnit: product.packUnit || 'Pack',
+          looseUnit: product.looseUnit || 'Unit',
+          unitsPerPack,
+          unitLabel: product.looseUnit || 'Unit',
+          unitPrice: product.looseRetailPrice || product.retailPrice / unitsPerPack,
           allocations,
           subtotal,
           discountAmount,

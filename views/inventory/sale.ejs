@@ -1,63 +1,23 @@
 <%- include('../partials/header') %>
 
 <div class="page-heading d-flex flex-wrap gap-3 justify-content-between align-items-center mb-4">
-  <div>
-    <h1 class="h3 mb-1">New Medicine Sale</h1>
-    <p class="text-secondary mb-0">Enter medicines in the sheet below; empty rows are ignored</p>
-  </div>
-  <a href="/inventory/sales" class="btn btn-outline-secondary">
-    <i class="bi bi-receipt me-1"></i> Sales History
-  </a>
+  <div><h1 class="h3 mb-1">New Medicine Sale</h1><p class="text-secondary mb-0">Sell complete packs, loose units, or both</p></div>
+  <a href="/inventory/sales" class="btn btn-outline-secondary"><i class="bi bi-receipt me-1"></i> Sales History</a>
 </div>
 
-<% if (errors.length) { %>
-  <div class="alert alert-danger app-alert">
-    <ul class="mb-0">
-      <% errors.forEach((error) => { %><li><%= error %></li><% }) %>
-    </ul>
-  </div>
-<% } %>
+<% if (errors.length) { %><div class="alert alert-danger app-alert"><ul class="mb-0"><% errors.forEach((error) => { %><li><%= error %></li><% }) %></ul></div><% } %>
 
 <form action="/inventory/sale" method="post" id="saleForm">
-  <div class="alert alert-danger app-alert d-none" id="clientSaleError" role="alert">
-    <i class="bi bi-exclamation-circle-fill me-2"></i>
-    Please correct the highlighted sale rows before continuing.
-  </div>
+  <div class="alert alert-danger app-alert d-none" id="clientSaleError"><i class="bi bi-exclamation-circle-fill me-2"></i>Please correct the highlighted rows.</div>
   <div class="card app-card sale-sheet-card">
     <div class="sale-sheet-header">
-      <div>
-        <span class="sale-sheet-kicker">Sales invoice</span>
-        <h2 class="h5 mb-0">Medicine Entry Sheet</h2>
-      </div>
-      <div class="sale-sheet-header-actions">
-        <div class="sale-customer-field">
-          <label for="customerName" class="form-label">Customer</label>
-          <input
-            type="text"
-            class="form-control"
-            id="customerName"
-            name="customerName"
-            maxlength="100"
-            value="<%= form.customerName || '' %>"
-            placeholder="Walk-in customer"
-          >
-        </div>
-      </div>
+      <div><span class="sale-sheet-kicker">Sales invoice</span><h2 class="h5 mb-0">Pack &amp; Loose Sale Sheet</h2></div>
+      <div class="sale-customer-field"><label for="customerName" class="form-label">Customer</label><input type="text" class="form-control" id="customerName" name="customerName" maxlength="100" value="<%= form.customerName || '' %>" placeholder="Walk-in customer"></div>
     </div>
 
     <div class="table-responsive">
-      <table class="table sale-sheet-table align-middle mb-0">
-        <thead>
-          <tr>
-            <th class="sale-row-number">#</th>
-            <th>Medicine</th>
-            <th class="text-end">Available</th>
-            <th class="text-end">Retail Price</th>
-            <th>Quantity</th>
-            <th>Discount %</th>
-            <th class="text-end">Line Total</th>
-          </tr>
-        </thead>
+      <table class="table sale-sheet-table sale-pack-table align-middle mb-0">
+        <thead><tr><th class="sale-row-number">#</th><th>Medicine</th><th>Available Stock</th><th>Pack Qty</th><th>Loose Qty</th><th>Discount %</th><th class="text-end">Total</th></tr></thead>
         <tbody id="saleItems">
           <% Array.from({ length: Math.max(4, form.items.length) }, (_, index) => form.items[index] || {}).forEach((item, index) => { %>
             <tr class="sale-item-row">
@@ -66,208 +26,62 @@
                 <select class="form-select medicine-select" name="items[<%= index %>][medicineName]">
                   <option value="">Select medicine</option>
                   <% medicines.forEach((medicine) => { %>
-                    <option
-                      value="<%= medicine._id %>"
-                      data-price="<%= medicine.retailPrice %>"
-                      data-stock="<%= medicine.availableQuantity %>"
-                      <%= item.medicineName === medicine._id ? 'selected' : '' %>
-                    ><%= medicine._id %></option>
+                    <option value="<%= medicine._id %>" data-stock="<%= medicine.availableQuantity %>" data-pack-price="<%= medicine.retailPrice %>" data-loose-price="<%= medicine.looseRetailPrice || medicine.retailPrice / (medicine.unitsPerPack || 1) %>" data-pack-unit="<%= medicine.packUnit || 'Pack' %>" data-loose-unit="<%= medicine.looseUnit || 'Unit' %>" data-units="<%= medicine.unitsPerPack || 1 %>" data-loose-allowed="<%= medicine.allowLooseSale ? 'true' : 'false' %>" <%= item.medicineName === medicine._id ? 'selected' : '' %>><%= medicine._id %></option>
                   <% }) %>
                 </select>
                 <div class="invalid-feedback medicine-error"></div>
               </td>
-              <td class="sale-stock-cell text-end">—</td>
-              <td class="sale-price-cell text-end">—</td>
-              <td>
-                <input
-                  class="form-control quantity-input"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  name="items[<%= index %>][quantity]"
-                  value="<%= item.quantity || '' %>"
-                  placeholder="0"
-                >
-                <div class="invalid-feedback quantity-error"></div>
-              </td>
-              <td>
-                <input
-                  class="form-control discount-input"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  name="items[<%= index %>][discountPercent]"
-                  value="<%= item.discountPercent || '' %>"
-                  placeholder="0"
-                >
-                <div class="invalid-feedback discount-error"></div>
-              </td>
+              <td class="sale-stock-cell"><span>—</span><small></small></td>
+              <td><div class="sale-unit-input"><input class="form-control pack-quantity-input" type="number" min="0" step="1" name="items[<%= index %>][packQuantity]" value="<%= item.packQuantity || '' %>" placeholder="0"><small class="pack-label">Pack</small></div><div class="invalid-feedback pack-error"></div></td>
+              <td><div class="sale-unit-input"><input class="form-control loose-quantity-input" type="number" min="0" step="1" name="items[<%= index %>][looseQuantity]" value="<%= item.looseQuantity || '' %>" placeholder="0"><small class="loose-label">Unit</small></div><div class="invalid-feedback loose-error"></div></td>
+              <td><input class="form-control discount-input" type="number" min="0" max="100" step="0.01" name="items[<%= index %>][discountPercent]" value="<%= item.discountPercent || '' %>" placeholder="0"><div class="invalid-feedback discount-error"></div></td>
               <td class="sale-line-total text-end">Rs. 0.00</td>
             </tr>
           <% }) %>
         </tbody>
       </table>
     </div>
-
-    <div class="sale-add-row">
-      <button type="button" class="btn btn-outline-primary btn-sm" id="addSaleItem">
-        <i class="bi bi-plus-lg me-1"></i> Add Item
-      </button>
-    </div>
-
-    <div class="sale-sheet-footer">
-      <p class="text-secondary small mb-0">
-        <i class="bi bi-arrow-down-up me-1"></i> Stock is issued from the earliest-expiring batch.
-      </p>
-      <div class="sale-summary">
-        <span>Grand Total</span>
-        <strong id="grandTotal">Rs. 0.00</strong>
-      </div>
-      <button type="submit" class="btn btn-primary">
-        <i class="bi bi-check2-circle me-1"></i> Complete Sale
-      </button>
-    </div>
+    <div class="sale-add-row"><button type="button" class="btn btn-outline-primary btn-sm" id="addSaleItem"><i class="bi bi-plus-lg me-1"></i> Add Item</button></div>
+    <div class="sale-sheet-footer"><p class="text-secondary small mb-0"><i class="bi bi-arrow-down-up me-1"></i>FEFO batch deduction; stock is stored in loose/base units.</p><div class="sale-summary"><span>Grand Total</span><strong id="grandTotal">Rs. 0.00</strong></div><button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1"></i> Complete Sale</button></div>
   </div>
 </form>
 
 <template id="saleRowTemplate">
-  <tr class="sale-item-row">
-    <td class="sale-row-number"></td>
-    <td>
-      <select class="form-select medicine-select">
-        <option value="">Select medicine</option>
-        <% medicines.forEach((medicine) => { %>
-          <option value="<%= medicine._id %>" data-price="<%= medicine.retailPrice %>" data-stock="<%= medicine.availableQuantity %>"><%= medicine._id %></option>
-        <% }) %>
-      </select>
-      <div class="invalid-feedback medicine-error"></div>
-    </td>
-    <td class="sale-stock-cell text-end">—</td>
-    <td class="sale-price-cell text-end">—</td>
-    <td>
-      <input class="form-control quantity-input" type="number" min="0.01" step="0.01" placeholder="0">
-      <div class="invalid-feedback quantity-error"></div>
-    </td>
-    <td>
-      <input class="form-control discount-input" type="number" min="0" max="100" step="0.01" placeholder="0">
-      <div class="invalid-feedback discount-error"></div>
-    </td>
-    <td class="sale-line-total text-end">Rs. 0.00</td>
-  </tr>
+  <tr class="sale-item-row"><td class="sale-row-number"></td><td><select class="form-select medicine-select"><option value="">Select medicine</option><% medicines.forEach((medicine) => { %><option value="<%= medicine._id %>" data-stock="<%= medicine.availableQuantity %>" data-pack-price="<%= medicine.retailPrice %>" data-loose-price="<%= medicine.looseRetailPrice || medicine.retailPrice / (medicine.unitsPerPack || 1) %>" data-pack-unit="<%= medicine.packUnit || 'Pack' %>" data-loose-unit="<%= medicine.looseUnit || 'Unit' %>" data-units="<%= medicine.unitsPerPack || 1 %>" data-loose-allowed="<%= medicine.allowLooseSale ? 'true' : 'false' %>"><%= medicine._id %></option><% }) %></select><div class="invalid-feedback medicine-error"></div></td><td class="sale-stock-cell"><span>—</span><small></small></td><td><div class="sale-unit-input"><input class="form-control pack-quantity-input" type="number" min="0" step="1" placeholder="0"><small class="pack-label">Pack</small></div><div class="invalid-feedback pack-error"></div></td><td><div class="sale-unit-input"><input class="form-control loose-quantity-input" type="number" min="0" step="1" placeholder="0"><small class="loose-label">Unit</small></div><div class="invalid-feedback loose-error"></div></td><td><input class="form-control discount-input" type="number" min="0" max="100" step="0.01" placeholder="0"><div class="invalid-feedback discount-error"></div></td><td class="sale-line-total text-end">Rs. 0.00</td></tr>
 </template>
 
 <script>
   const saleForm = document.getElementById('saleForm');
   const saleItems = document.getElementById('saleItems');
   const clientSaleError = document.getElementById('clientSaleError');
-
-  function setFieldError(field, message, feedback) {
-    field.classList.toggle('is-invalid', Boolean(message));
-    field.setCustomValidity(message);
-    feedback.textContent = message;
-  }
-
-  function refreshSheet(showEmptyErrors = false) {
-    const rows = [...document.querySelectorAll('.sale-item-row')];
-    let grandTotal = 0;
-    let hasErrors = false;
-
-    const selectedMedicines = rows
-      .map((row) => row.querySelector('.medicine-select').value)
-      .filter(Boolean);
-
+  function errorFor(field, feedback, message) { field.classList.toggle('is-invalid', Boolean(message)); field.setCustomValidity(message); feedback.textContent = message; }
+  function refreshSheet() {
+    const rows = [...saleItems.querySelectorAll('.sale-item-row')];
+    const selected = rows.map((row) => row.querySelector('.medicine-select').value).filter(Boolean);
+    let grand = 0; let invalid = false;
     rows.forEach((row, index) => {
-      const medicineSelect = row.querySelector('.medicine-select');
-      const quantityInput = row.querySelector('.quantity-input');
-      const discountInput = row.querySelector('.discount-input');
-      row.querySelector('.sale-row-number').textContent = index + 1;
-      medicineSelect.name = `items[${index}][medicineName]`;
-      quantityInput.name = `items[${index}][quantity]`;
-      discountInput.name = `items[${index}][discountPercent]`;
-      const option = medicineSelect.selectedOptions[0];
-      const price = Number(option?.dataset.price || 0);
-      const stock = Number(option?.dataset.stock || 0);
-      const quantityText = quantityInput.value.trim();
-      const discountText = discountInput.value.trim();
-      const quantity = Number(quantityText || 0);
-      const discount = Number(discountText || 0);
-      const rowStarted = Boolean(medicineSelect.value || quantityText || discountText);
-      const duplicate = medicineSelect.value &&
-        selectedMedicines.filter((name) => name === medicineSelect.value).length > 1;
-
-      let medicineError = '';
-      let quantityError = '';
-      let discountError = '';
-
-      if (duplicate) medicineError = 'This medicine is already selected in another row.';
-      else if (rowStarted && !medicineSelect.value) medicineError = 'Select a medicine.';
-
-      if (rowStarted && !quantityText) quantityError = 'Enter a quantity.';
-      else if (quantityText && (!Number.isFinite(quantity) || quantity <= 0)) {
-        quantityError = 'Quantity must be greater than zero.';
-      } else if (medicineSelect.value && quantity > stock) {
-        quantityError = `Only ${stock} available.`;
-      }
-
-      if (discountText && (!Number.isFinite(discount) || discount < 0 || discount > 100)) {
-        discountError = 'Use a discount from 0 to 100.';
-      }
-
-      if (!showEmptyErrors && !rowStarted) {
-        medicineError = '';
-        quantityError = '';
-        discountError = '';
-      }
-
-      setFieldError(medicineSelect, medicineError, row.querySelector('.medicine-error'));
-      setFieldError(quantityInput, quantityError, row.querySelector('.quantity-error'));
-      setFieldError(discountInput, discountError, row.querySelector('.discount-error'));
-      quantityInput.max = medicineSelect.value ? stock : '';
-
-      const total = Math.max(0, quantity * price * (1 - discount / 100));
-
-      row.querySelector('.sale-stock-cell').textContent = option?.value ? stock : '—';
-      row.querySelector('.sale-price-cell').textContent = option?.value ? `Rs. ${price.toFixed(2)}` : '—';
-      row.querySelector('.sale-line-total').textContent = `Rs. ${total.toFixed(2)}`;
-      row.classList.toggle('sale-row-active', Boolean(option?.value));
-      grandTotal += total;
-      hasErrors = hasErrors || Boolean(medicineError || quantityError || discountError);
+      const medicine = row.querySelector('.medicine-select'); const option = medicine.selectedOptions[0];
+      const packInput = row.querySelector('.pack-quantity-input'); const looseInput = row.querySelector('.loose-quantity-input'); const discountInput = row.querySelector('.discount-input');
+      medicine.name = `items[${index}][medicineName]`; packInput.name = `items[${index}][packQuantity]`; looseInput.name = `items[${index}][looseQuantity]`; discountInput.name = `items[${index}][discountPercent]`; row.querySelector('.sale-row-number').textContent = index + 1;
+      const packs = Number(packInput.value || 0); const loose = Number(looseInput.value || 0); const discount = Number(discountInput.value || 0); const units = Number(option?.dataset.units || 1); const stock = Number(option?.dataset.stock || 0); const packPrice = Number(option?.dataset.packPrice || 0); const loosePrice = Number(option?.dataset.loosePrice || 0); const looseAllowed = option?.dataset.looseAllowed === 'true'; const started = Boolean(medicine.value || packInput.value || looseInput.value || discountInput.value);
+      let medicineError = ''; let packError = ''; let looseError = ''; let discountError = '';
+      if (medicine.value && selected.filter((value) => value === medicine.value).length > 1) medicineError = 'Medicine already selected.'; else if (started && !medicine.value) medicineError = 'Select a medicine.';
+      if ((packInput.value && (!Number.isInteger(packs) || packs < 0))) packError = 'Use a whole number.';
+      if ((looseInput.value && (!Number.isInteger(loose) || loose < 0))) looseError = 'Use a whole number.'; else if (loose > 0 && !looseAllowed) looseError = 'Loose sale is disabled.';
+      if (medicine.value && packs * units + loose > stock) looseError = `Only ${stock} base units available.`;
+      if (started && packs + loose <= 0) packError = 'Enter pack or loose quantity.';
+      if (discountInput.value && (discount < 0 || discount > 100)) discountError = 'Use 0 to 100.';
+      errorFor(medicine, row.querySelector('.medicine-error'), medicineError); errorFor(packInput, row.querySelector('.pack-error'), packError); errorFor(looseInput, row.querySelector('.loose-error'), looseError); errorFor(discountInput, row.querySelector('.discount-error'), discountError);
+      looseInput.disabled = Boolean(medicine.value && !looseAllowed); row.querySelector('.pack-label').textContent = option?.dataset.packUnit || 'Pack'; row.querySelector('.loose-label').textContent = option?.dataset.looseUnit || 'Unit';
+      const stockCell = row.querySelector('.sale-stock-cell'); if (medicine.value) { const fullPacks = Math.floor(stock / units); const remainder = stock % units; stockCell.querySelector('span').textContent = `${fullPacks} ${option.dataset.packUnit}`; stockCell.querySelector('small').textContent = `+ ${remainder} ${option.dataset.looseUnit}`; } else { stockCell.querySelector('span').textContent = '—'; stockCell.querySelector('small').textContent = ''; }
+      const total = Math.max(0, (packs * packPrice + loose * loosePrice) * (1 - discount / 100)); row.querySelector('.sale-line-total').textContent = `Rs. ${total.toFixed(2)}`; row.classList.toggle('sale-row-active', Boolean(medicine.value)); grand += total; invalid ||= Boolean(medicineError || packError || looseError || discountError);
     });
-
-    rows.forEach((row) => {
-      const ownValue = row.querySelector('.medicine-select').value;
-      row.querySelectorAll('.medicine-select option').forEach((option) => {
-        if (!option.value) return;
-        option.disabled = option.value !== ownValue && selectedMedicines.includes(option.value);
-      });
-    });
-
-    document.getElementById('grandTotal').textContent = `Rs. ${grandTotal.toFixed(2)}`;
-    return hasErrors;
+    rows.forEach((row) => { const own = row.querySelector('.medicine-select').value; row.querySelectorAll('.medicine-select option').forEach((option) => { if (option.value) option.disabled = option.value !== own && selected.includes(option.value); }); });
+    document.getElementById('grandTotal').textContent = `Rs. ${grand.toFixed(2)}`; return invalid;
   }
-
-  saleItems.addEventListener('input', () => refreshSheet());
-  saleItems.addEventListener('change', () => refreshSheet());
-  document.getElementById('addSaleItem').addEventListener('click', () => {
-    saleItems.appendChild(document.getElementById('saleRowTemplate').content.cloneNode(true));
-    refreshSheet();
-    saleItems.querySelector('.sale-item-row:last-child .medicine-select').focus();
-  });
-  saleForm.addEventListener('submit', (event) => {
-    const rows = [...document.querySelectorAll('.sale-item-row')];
-    const hasMedicine = rows.some((row) => row.querySelector('.medicine-select').value);
-    const hasErrors = refreshSheet(true);
-
-    if (!hasMedicine || hasErrors) {
-      event.preventDefault();
-      clientSaleError.classList.remove('d-none');
-      const firstInvalid = saleForm.querySelector('.is-invalid');
-      firstInvalid?.focus();
-    } else {
-      clientSaleError.classList.add('d-none');
-    }
-  });
+  saleItems.addEventListener('input', refreshSheet); saleItems.addEventListener('change', refreshSheet);
+  document.getElementById('addSaleItem').addEventListener('click', () => { saleItems.appendChild(document.getElementById('saleRowTemplate').content.cloneNode(true)); refreshSheet(); saleItems.querySelector('.sale-item-row:last-child .medicine-select').focus(); });
+  saleForm.addEventListener('submit', (event) => { const hasMedicine = [...saleItems.querySelectorAll('.medicine-select')].some((field) => field.value); if (!hasMedicine || refreshSheet()) { event.preventDefault(); clientSaleError.classList.remove('d-none'); saleForm.querySelector('.is-invalid')?.focus(); } else clientSaleError.classList.add('d-none'); });
   refreshSheet();
 </script>
 

@@ -1,75 +1,65 @@
 <%- include('../partials/header') %>
 
 <div class="page-heading d-flex flex-wrap gap-3 justify-content-between align-items-center mb-4">
-  <div>
-    <h1 class="h3 mb-1">Add Medicine Stock</h1>
-    <p class="text-secondary mb-0">Create a medicine batch or add stock to an existing batch</p>
-  </div>
-  <div class="d-flex gap-2">
-    <a href="/inventory/upload" class="btn btn-outline-primary"><i class="bi bi-cloud-arrow-up me-1"></i> CSV Upload</a>
-    <a href="/inventory" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Inventory</a>
-  </div>
+  <div><h1 class="h3 mb-1">Add Medicine Stock</h1><p class="text-secondary mb-0">Receive stock in packs and loose units</p></div>
+  <div class="d-flex gap-2"><a href="/inventory/upload" class="btn btn-outline-primary"><i class="bi bi-cloud-arrow-up me-1"></i> CSV Upload</a><a href="/inventory" class="btn btn-outline-secondary">Inventory</a></div>
 </div>
 
-<% if (errors.length) { %>
-  <div class="alert alert-danger app-alert">
-    <ul class="mb-0"><% errors.forEach((error) => { %><li><%= error %></li><% }) %></ul>
-  </div>
-<% } %>
+<% if (errors.length) { %><div class="alert alert-danger app-alert"><ul class="mb-0"><% errors.forEach((error) => { %><li><%= error %></li><% }) %></ul></div><% } %>
 
-<div class="row justify-content-center">
-  <div class="col-xl-9">
-    <form action="/inventory/add" method="post" class="card app-card">
-      <div class="card-header bg-white py-3">
-        <h2 class="h5 mb-0"><i class="bi bi-capsule me-2 text-primary"></i>Medicine &amp; Batch Details</h2>
-      </div>
-      <div class="card-body p-4">
-        <div class="row g-3">
-          <div class="col-md-8">
-            <label for="medicineName" class="form-label">Medicine name</label>
-            <input class="form-control" id="medicineName" name="medicineName" maxlength="150" value="<%= form.medicineName || '' %>" placeholder="e.g. Paracetamol 500mg" required autofocus>
-          </div>
-          <div class="col-md-4">
-            <label for="batchNumber" class="form-label">Batch number</label>
-            <input class="form-control" id="batchNumber" name="batchNumber" maxlength="80" value="<%= form.batchNumber || '' %>" required>
-          </div>
-          <div class="col-md-4">
-            <label for="expiryDate" class="form-label">Expiry date</label>
-            <input class="form-control" type="date" id="expiryDate" name="expiryDate" value="<%= form.expiryDate || '' %>" required>
-          </div>
-          <div class="col-md-4">
-            <label for="quantity" class="form-label">Quantity</label>
-            <input class="form-control" type="number" id="quantity" name="quantity" min="0.01" step="0.01" value="<%= form.quantity || '' %>" required>
-          </div>
-          <div class="col-md-4">
-            <label for="reference" class="form-label">Invoice/reference <span class="fw-normal text-secondary">(optional)</span></label>
-            <input class="form-control" id="reference" name="reference" maxlength="100" value="<%= form.reference || '' %>">
-          </div>
-          <div class="col-md-6">
-            <label for="purchasePrice" class="form-label">Purchase price per unit</label>
-            <div class="input-group">
-              <span class="input-group-text">Rs.</span>
-              <input class="form-control" type="number" id="purchasePrice" name="purchasePrice" min="0" step="0.01" value="<%= form.purchasePrice || '' %>" required>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <label for="retailPrice" class="form-label">Retail price per unit</label>
-            <div class="input-group">
-              <span class="input-group-text">Rs.</span>
-              <input class="form-control" type="number" id="retailPrice" name="retailPrice" min="0" step="0.01" value="<%= form.retailPrice || '' %>" required>
-            </div>
-          </div>
-        </div>
-        <div class="alert alert-light border mt-4 mb-0 small text-secondary">
-          If medicine name, batch number, and expiry match an existing batch, its quantity will increase and its latest prices will be saved.
-        </div>
-      </div>
-      <div class="card-footer bg-white d-flex justify-content-end gap-2 p-3">
-        <a href="/inventory" class="btn btn-outline-secondary">Cancel</a>
-        <button class="btn btn-primary" type="submit"><i class="bi bi-plus-circle me-1"></i> Add Stock</button>
-      </div>
-    </form>
+<form action="/inventory/add" method="post" class="card app-card">
+  <div class="card-header bg-white py-3"><h2 class="h5 mb-0"><i class="bi bi-capsule me-2 text-primary"></i>Medicine, Packing &amp; Batch</h2></div>
+  <div class="card-body p-4">
+    <div class="row g-3">
+      <div class="col-md-8"><label for="medicineName" class="form-label">Medicine name</label><input class="form-control" id="medicineName" name="medicineName" maxlength="150" value="<%= form.medicineName || '' %>" placeholder="e.g. Panadol 500mg" required autofocus></div>
+      <div class="col-md-4"><label for="batchNumber" class="form-label">Batch number</label><input class="form-control" id="batchNumber" name="batchNumber" maxlength="80" value="<%= form.batchNumber || '' %>" required></div>
+      <div class="col-md-4"><label for="expiryDate" class="form-label">Expiry date</label><input class="form-control" type="date" id="expiryDate" name="expiryDate" value="<%= form.expiryDate || '' %>" required></div>
+      <div class="col-md-4"><label for="reference" class="form-label">Supplier invoice/reference</label><input class="form-control" id="reference" name="reference" maxlength="100" value="<%= form.reference || '' %>"></div>
+    </div>
+
+    <hr class="my-4">
+    <h3 class="h6 mb-3">Packing Conversion</h3>
+    <div class="row g-3">
+      <div class="col-md-4"><label for="packUnit" class="form-label">Pack unit</label><input class="form-control" id="packUnit" name="packUnit" value="<%= form.packUnit || 'Box' %>" placeholder="Box, Bottle, Carton" required></div>
+      <div class="col-md-4"><label for="looseUnit" class="form-label">Loose/base unit</label><input class="form-control" id="looseUnit" name="looseUnit" value="<%= form.looseUnit || 'Tablet' %>" placeholder="Tablet, Capsule, Ampoule" required></div>
+      <div class="col-md-4"><label for="unitsPerPack" class="form-label">Loose units per pack</label><input class="form-control" type="number" id="unitsPerPack" name="unitsPerPack" min="1" step="1" value="<%= form.unitsPerPack || 1 %>" required></div>
+      <div class="col-12"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="allowLooseSale" name="allowLooseSale" <%= form.allowLooseSale ? 'checked' : '' %>><label class="form-check-label" for="allowLooseSale">Allow this medicine to be sold loose</label></div></div>
+    </div>
+
+    <hr class="my-4">
+    <h3 class="h6 mb-3">Quantity Received</h3>
+    <div class="row g-3">
+      <div class="col-md-6"><label for="packsReceived" class="form-label">Full packs</label><input class="form-control" type="number" id="packsReceived" name="packsReceived" min="0" step="1" value="<%= form.packsReceived ?? 0 %>" required></div>
+      <div class="col-md-6"><label for="looseReceived" class="form-label">Additional loose units</label><input class="form-control" type="number" id="looseReceived" name="looseReceived" min="0" step="1" value="<%= form.looseReceived ?? 0 %>" required><div class="form-text" id="stockConversion">Total stock: 0 base units</div></div>
+    </div>
+
+    <hr class="my-4">
+    <h3 class="h6 mb-3">Pricing</h3>
+    <div class="row g-3">
+      <div class="col-md-4"><label for="purchasePrice" class="form-label">Purchase price / pack</label><div class="input-group"><span class="input-group-text">Rs.</span><input class="form-control" type="number" id="purchasePrice" name="purchasePrice" min="0" step="0.01" value="<%= form.purchasePrice || '' %>" required></div></div>
+      <div class="col-md-4"><label for="retailPrice" class="form-label">Retail price / pack</label><div class="input-group"><span class="input-group-text">Rs.</span><input class="form-control" type="number" id="retailPrice" name="retailPrice" min="0" step="0.01" value="<%= form.retailPrice || '' %>" required></div></div>
+      <div class="col-md-4"><label for="looseRetailPrice" class="form-label">Retail price / loose unit</label><div class="input-group"><span class="input-group-text">Rs.</span><input class="form-control" type="number" id="looseRetailPrice" name="looseRetailPrice" min="0" step="0.01" value="<%= form.looseRetailPrice || '' %>"></div><div class="form-text">Used only when loose sale is enabled.</div></div>
+    </div>
   </div>
-</div>
+  <div class="card-footer bg-white d-flex justify-content-end gap-2 p-3"><a href="/inventory" class="btn btn-outline-secondary">Cancel</a><button class="btn btn-primary" type="submit"><i class="bi bi-plus-circle me-1"></i> Add Stock</button></div>
+</form>
+
+<script>
+  const packs = document.getElementById('packsReceived');
+  const loose = document.getElementById('looseReceived');
+  const conversion = document.getElementById('unitsPerPack');
+  const loosePrice = document.getElementById('looseRetailPrice');
+  const allowLoose = document.getElementById('allowLooseSale');
+  function refreshPacking() {
+    const units = Number(conversion.value || 1);
+    const total = Number(packs.value || 0) * units + Number(loose.value || 0);
+    document.getElementById('stockConversion').textContent = `Total stock: ${total} ${document.getElementById('looseUnit').value || 'base unit'}(s)`;
+    loose.max = Math.max(0, units - 1);
+    loosePrice.disabled = !allowLoose.checked;
+    loosePrice.required = allowLoose.checked;
+  }
+  document.querySelectorAll('#packsReceived, #looseReceived, #unitsPerPack, #looseUnit, #allowLooseSale').forEach((field) => field.addEventListener('input', refreshPacking));
+  refreshPacking();
+</script>
 
 <%- include('../partials/footer') %>
