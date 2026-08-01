@@ -48,17 +48,27 @@
   const packs = document.getElementById('packsReceived');
   const loose = document.getElementById('looseReceived');
   const conversion = document.getElementById('unitsPerPack');
+  const retailPrice = document.getElementById('retailPrice');
   const loosePrice = document.getElementById('looseRetailPrice');
   const allowLoose = document.getElementById('allowLooseSale');
+  function calculateLoosePrice() {
+    const packRetail = Number(retailPrice.value);
+    const units = Number(conversion.value);
+    if (Number.isFinite(packRetail) && packRetail >= 0 && Number.isInteger(units) && units > 0) loosePrice.value = (packRetail / units).toFixed(2);
+    else loosePrice.value = '';
+  }
   function refreshPacking() {
     const units = Number(conversion.value || 1);
     const total = Number(packs.value || 0) * units + Number(loose.value || 0);
     document.getElementById('stockConversion').textContent = `Total stock: ${total} ${document.getElementById('looseUnit').value || 'base unit'}(s)`;
     loose.max = Math.max(0, units - 1);
-    loosePrice.disabled = !allowLoose.checked;
     loosePrice.required = allowLoose.checked;
   }
   document.querySelectorAll('#packsReceived, #looseReceived, #unitsPerPack, #looseUnit, #allowLooseSale').forEach((field) => field.addEventListener('input', refreshPacking));
+  retailPrice.addEventListener('input', calculateLoosePrice);
+  conversion.addEventListener('input', calculateLoosePrice);
+  allowLoose.addEventListener('change', () => { if (allowLoose.checked && !loosePrice.value) calculateLoosePrice(); });
+  if (!loosePrice.value) calculateLoosePrice();
   refreshPacking();
 </script>
 
