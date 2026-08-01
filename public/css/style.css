@@ -229,6 +229,59 @@ main.container {
   margin-bottom: 0.25rem;
 }
 
+.mr-combobox {
+  position: relative;
+}
+
+.mr-suggestions {
+  position: absolute;
+  z-index: 1050;
+  top: calc(100% + 0.3rem);
+  right: 0;
+  left: 0;
+  max-height: 18rem;
+  overflow-y: auto;
+  padding: 0.35rem;
+  border: 1px solid var(--app-border);
+  border-radius: 0.65rem;
+  background: #fff;
+  box-shadow: 0 0.75rem 2rem rgba(15, 23, 42, 0.16);
+}
+
+.mr-suggestion {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 0;
+  border-radius: 0.45rem;
+  background: transparent;
+  color: var(--app-navy);
+  text-align: left;
+}
+
+.mr-suggestion:hover,
+.mr-suggestion:focus {
+  background: #eaf1ff;
+  color: var(--app-primary);
+  outline: 0;
+}
+
+.mr-suggestion small {
+  overflow: hidden;
+  color: var(--bs-secondary-color);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mr-no-results {
+  padding: 0.8rem;
+  color: var(--bs-secondary-color);
+  text-align: center;
+}
+
 .sale-sheet-table {
   min-width: 900px;
 }

@@ -6,6 +6,7 @@
 </div>
 
 <% if (errors.length) { %><div class="alert alert-danger app-alert"><ul class="mb-0"><% errors.forEach((error) => { %><li><%= error %></li><% }) %></ul></div><% } %>
+<% const selectedMrPatient = patients.find((patient) => patient._id === form.patientMr); %>
 
 <form action="/inventory/sale" method="post" id="saleForm">
   <div class="alert alert-danger app-alert d-none" id="clientSaleError"><i class="bi bi-exclamation-circle-fill me-2"></i>Please correct the highlighted rows.</div>
@@ -13,7 +14,7 @@
     <div class="sale-sheet-header">
       <div><span class="sale-sheet-kicker">Sales invoice</span><h2 class="h5 mb-0">Pack &amp; Loose Sale Sheet</h2></div>
       <div class="d-flex flex-wrap gap-2">
-        <div class="sale-customer-field"><label for="patientMr" class="form-label">Patient MR <small class="text-secondary">(optional)</small></label><select class="form-select" id="patientMr" name="patientMr"><option value="" data-patient-name="Walk-in customer">Without MR</option><% patients.forEach((patient) => { %><option value="<%= patient._id %>" data-patient-name="<%= patient.patientName %>" <%= form.patientMr === patient._id ? 'selected' : '' %>><%= patient._id %> — <%= patient.patientName %></option><% }) %></select></div>
+        <div class="sale-customer-field"><label for="patientMrSearch" class="form-label">Patient MR <small class="text-secondary">(optional)</small></label><div class="mr-combobox"><input type="hidden" id="patientMr" name="patientMr" value="<%= form.patientMr || '' %>"><input type="search" class="form-control" id="patientMrSearch" value="<%= selectedMrPatient ? `${selectedMrPatient._id} — ${selectedMrPatient.patientName}` : '' %>" placeholder="Type patient name or MR number" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="patientMrSuggestions"><div class="mr-suggestions d-none" id="patientMrSuggestions" role="listbox"><button type="button" class="mr-suggestion" data-mr="" data-patient-name="Walk-in customer" data-search="without mr walk-in customer" role="option"><strong>Without MR</strong><small>Walk-in customer</small></button><% patients.forEach((patient) => { %><button type="button" class="mr-suggestion" data-mr="<%= patient._id %>" data-patient-name="<%= patient.patientName %>" data-search="<%= `${patient._id} ${patient.patientName}`.toLowerCase() %>" role="option"><strong><%= patient._id %></strong><small><%= patient.patientName %></small></button><% }) %><div class="mr-no-results d-none">No matching patient found</div></div></div></div>
         <div class="sale-customer-field"><label for="customerName" class="form-label">Customer</label><input type="text" class="form-control" id="customerName" name="customerName" maxlength="100" value="<%= form.customerName || 'Walk-in customer' %>"></div>
       </div>
     </div>
@@ -56,13 +57,26 @@
 <script>
   const saleForm = document.getElementById('saleForm');
   const patientMr = document.getElementById('patientMr');
+  const patientMrSearch = document.getElementById('patientMrSearch');
+  const patientMrSuggestions = document.getElementById('patientMrSuggestions');
   const customerName = document.getElementById('customerName');
   const saleItems = document.getElementById('saleItems');
   const clientSaleError = document.getElementById('clientSaleError');
-  patientMr.addEventListener('change', () => {
-    const selected = patientMr.options[patientMr.selectedIndex];
-    customerName.value = selected?.dataset.patientName || 'Walk-in customer';
-  });
+  const mrOptions = [...patientMrSuggestions.querySelectorAll('.mr-suggestion')];
+  const showMrSuggestions = () => { patientMrSuggestions.classList.remove('d-none'); patientMrSearch.setAttribute('aria-expanded', 'true'); };
+  const hideMrSuggestions = () => { patientMrSuggestions.classList.add('d-none'); patientMrSearch.setAttribute('aria-expanded', 'false'); };
+  function filterMrSuggestions() {
+    const query = patientMr.value ? '' : patientMrSearch.value.trim().toLowerCase();
+    let matches = 0;
+    mrOptions.forEach((option) => { const visible = !query || option.dataset.search.includes(query); option.classList.toggle('d-none', !visible); if (visible) matches += 1; });
+    patientMrSuggestions.querySelector('.mr-no-results').classList.toggle('d-none', matches > 0);
+    showMrSuggestions();
+  }
+  patientMrSearch.addEventListener('focus', filterMrSuggestions);
+  patientMrSearch.addEventListener('input', () => { patientMr.value = ''; customerName.value = 'Walk-in customer'; filterMrSuggestions(); });
+  patientMrSearch.addEventListener('keydown', (event) => { if (event.key === 'Escape') hideMrSuggestions(); if (event.key === 'Enter') { const first = mrOptions.find((option) => !option.classList.contains('d-none')); if (first) { event.preventDefault(); first.click(); } } });
+  mrOptions.forEach((option) => option.addEventListener('click', () => { patientMr.value = option.dataset.mr; customerName.value = option.dataset.patientName || 'Walk-in customer'; patientMrSearch.value = option.dataset.mr ? `${option.dataset.mr} — ${option.dataset.patientName}` : ''; hideMrSuggestions(); }));
+  document.addEventListener('click', (event) => { if (!event.target.closest('.mr-combobox')) hideMrSuggestions(); });
   function errorFor(field, feedback, message) { field.classList.toggle('is-invalid', Boolean(message)); field.setCustomValidity(message); feedback.textContent = message; }
   function refreshSheet() {
     const rows = [...saleItems.querySelectorAll('.sale-item-row')];

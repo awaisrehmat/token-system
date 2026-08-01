@@ -429,8 +429,7 @@ async function availablePatients() {
   return Patient.aggregate([
     { $sort: { createdAt: -1 } },
     { $group: { _id: '$mrNumber', patientName: { $first: '$patientName' } } },
-    { $sort: { patientName: 1 } },
-    { $limit: 500 }
+    { $sort: { patientName: 1 } }
   ]);
 }
 
