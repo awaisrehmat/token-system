@@ -400,7 +400,7 @@ exports.showSale = async (req, res, next) => {
       title: 'New Medicine Sale',
       medicines,
       patients,
-      form: { patientMr: '', customerName: '', items: Array.from({ length: 4 }, () => ({})) },
+      form: { patientMr: '', customerName: 'Walk-in customer', items: Array.from({ length: 4 }, () => ({})) },
       errors: []
     });
   } catch (error) {
