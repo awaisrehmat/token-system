@@ -32,41 +32,35 @@
 
 <div class="card app-card overflow-hidden">
   <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
+    <table class="table table-hover align-middle mb-0 patient-list-table">
       <thead class="table-light">
         <tr>
-          <th>MR Number</th><th>Token</th><th>Patient Name</th><th>Age</th><th>Sex</th><th>CNIC</th>
-          <th>Contact</th><th>Physician</th><th>Type</th><th>Date</th><th>Actions</th>
+          <th>Patient</th><th>Token / Date</th><th>Details</th><th>Contact</th><th>Physician</th><th class="text-end">Actions</th>
         </tr>
       </thead>
       <tbody>
         <% if (!patients.length) { %>
-          <tr><td colspan="11" class="text-center text-secondary py-5">No patients found.</td></tr>
+          <tr><td colspan="6" class="text-center text-secondary py-5">No patients found.</td></tr>
         <% } %>
         <% patients.forEach((patient) => { %>
           <tr>
-            <td class="text-nowrap fw-semibold"><%= patient.mrNumber %></td>
-            <td><span class="badge text-bg-primary fs-6"><%= patient.tokenNumber %></span></td>
-            <td class="fw-medium">
-              <%= patient.patientName %>
+            <td>
+              <strong><%= patient.patientName %></strong>
+              <div class="small text-primary fw-semibold"><%= patient.mrNumber %></div>
               <% if (patient.relationType && patient.relativeName) { %>
                 <div class="small text-secondary"><%= patient.relationType %> <%= patient.relativeName %></div>
               <% } %>
             </td>
-            <td class="text-nowrap"><%= patient.age %>y <%= patient.ageMonths || 0 %>m</td>
-            <td><%= patient.sex %></td>
-            <td class="text-nowrap"><%= formatCnic(patient.cnic) %></td>
-            <td class="text-nowrap"><%= patient.contactNumber %></td>
+            <td><span class="badge text-bg-primary fs-6"><%= patient.tokenNumber %></span><div class="small text-secondary mt-1"><%= patient.tokenDate %></div></td>
+            <td><span class="text-nowrap"><%= patient.age %>y <%= patient.ageMonths || 0 %>m · <%= patient.sex %></span><div class="small text-secondary"><%= patient.patientType %></div></td>
+            <td><span><%= patient.contactNumber %></span><div class="small text-secondary"><%= formatCnic(patient.cnic) %></div></td>
             <td><%= patient.consultant ? patient.consultant.name : 'Deleted physician' %></td>
-            <td><%= patient.patientType %></td>
-            <td class="text-nowrap"><%= patient.tokenDate %></td>
-            <td>
-              <div class="d-flex flex-wrap gap-1">
-                <a href="/patients/<%= patient._id %>/token" class="btn btn-sm btn-action btn-outline-secondary" title="View"><i class="bi bi-eye"></i></a>
+            <td class="text-end">
+              <div class="d-inline-flex gap-1 patient-actions">
                 <a href="/patients/<%= patient._id %>/history" class="btn btn-sm btn-action btn-outline-dark" title="Patient History"><i class="bi bi-clock-history"></i></a>
                 <button
                   type="button"
-                  class="btn btn-sm btn-success text-nowrap new-token-button"
+                  class="btn btn-sm btn-action btn-success new-token-button"
                   title="Generate New Token"
                   data-bs-toggle="modal"
                   data-bs-target="#newTokenModal"
@@ -74,7 +68,7 @@
                   data-patient-name="<%= patient.patientName %>"
                   data-mr-number="<%= patient.mrNumber %>"
                   data-physician-id="<%= patient.consultant ? patient.consultant._id : '' %>"
-                ><i class="bi bi-ticket-perforated me-1"></i>New Token</button>
+                ><i class="bi bi-ticket-perforated"></i></button>
                 <a href="/patients/<%= patient._id %>/edit" class="btn btn-sm btn-action btn-outline-primary" title="Edit"><i class="bi bi-pencil"></i></a>
                 <a href="/patients/<%= patient._id %>/token?print=1" class="btn btn-sm btn-action btn-outline-success" title="Print Token"><i class="bi bi-printer"></i></a>
                 <form action="/patients/<%= patient._id %>/delete" method="post" class="d-inline delete-form">

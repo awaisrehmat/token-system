@@ -970,6 +970,39 @@ main.container {
   font-size: 0.84rem;
 }
 
+.patient-list-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.patient-list-table th:nth-child(1) { width: 22%; }
+.patient-list-table th:nth-child(2) { width: 12%; }
+.patient-list-table th:nth-child(3) { width: 15%; }
+.patient-list-table th:nth-child(4) { width: 18%; }
+.patient-list-table th:nth-child(5) { width: 16%; }
+.patient-list-table th:nth-child(6) { width: 17%; }
+
+.patient-list-table td {
+  overflow-wrap: anywhere;
+}
+
+.patient-actions {
+  white-space: nowrap;
+}
+
+@media (min-width: 992px) {
+  .patient-list-table {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .patient-list-table {
+    min-width: 800px;
+    table-layout: auto;
+  }
+}
+
 .badge.text-bg-primary {
   border: 1px solid #bfdbfe;
   border-radius: 0.5rem;
