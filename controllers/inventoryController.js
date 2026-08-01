@@ -166,7 +166,7 @@ exports.productDetails = async (req, res, next) => {
     if (!product) return res.status(404).render('error', { title: 'Medicine Not Found', pageMessage: 'Medicine product not found.' });
     const batches = await MedicineBatch.find({ product: product._id }).sort({ expiryDate: 1 }).lean();
     const transactions = await StockTransaction.find({ medicineBatch: { $in: batches.map((batch) => batch._id) } })
-      .populate('medicineBatch', 'batchNumber')
+      .populate('medicineBatch', 'batchNumber expiryDate')
       .sort({ createdAt: -1 })
       .limit(200)
       .lean();
