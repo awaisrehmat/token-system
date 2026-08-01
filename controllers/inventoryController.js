@@ -9,9 +9,15 @@ const REQUIRED_HEADERS = [
   'medicine_name',
   'batch_number',
   'expiry_date',
-  'quantity',
+  'pack_unit',
+  'loose_unit',
+  'units_per_pack',
+  'packs_received',
+  'loose_received',
   'purchase_price',
-  'retail_price'
+  'retail_price',
+  'allow_loose_sale',
+  'loose_retail_price'
 ];
 
 exports.index = async (req, res, next) => {
@@ -620,7 +626,7 @@ exports.createSale = async (req, res, next) => {
 exports.downloadTemplate = (req, res) => {
   const sample = [
     REQUIRED_HEADERS.join(','),
-    'Paracetamol 500mg,BATCH-001,2027-12-31,100,2.50,3.00'
+    'Paracetamol 500mg,BATCH-001,2027-12-31,Box,Tablet,100,10,20,800,1000,yes,11'
   ].join('\n');
 
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
@@ -650,18 +656,26 @@ exports.uploadMedicines = async (req, res, next) => {
 
     for (let rowIndex = 1; rowIndex < rows.length; rowIndex += 1) {
       const values = Object.fromEntries(headers.map((header, index) => [header, rows[rowIndex][index] || '']));
-      const quantity = Number(values.quantity);
+      const unitsPerPack = Number(values.units_per_pack);
+      const packsReceived = Number(values.packs_received);
+      const looseReceived = Number(values.loose_received);
+      const quantity = packsReceived * unitsPerPack + looseReceived;
       const purchasePrice = Number(values.purchase_price);
       const retailPrice = Number(values.retail_price);
+      const allowLooseSale = ['yes', 'true', '1'].includes(String(values.allow_loose_sale).toLowerCase());
+      const looseRetailPrice = Number(values.loose_retail_price || 0);
       const expiryDate = new Date(`${values.expiry_date}T00:00:00.000Z`);
       const lineNumber = rowIndex + 1;
 
       if (!values.medicine_name || !values.batch_number) {
         errors.push(`Row ${lineNumber}: medicine name and batch number are required.`);
-      } else if (!Number.isFinite(quantity) || quantity <= 0) {
-        errors.push(`Row ${lineNumber}: quantity must be greater than zero.`);
+      } else if (!values.pack_unit || !values.loose_unit || !Number.isInteger(unitsPerPack) || unitsPerPack < 1) {
+        errors.push(`Row ${lineNumber}: valid pack unit, loose unit, and units per pack are required.`);
+      } else if (!Number.isInteger(packsReceived) || packsReceived < 0 || !Number.isInteger(looseReceived) || looseReceived < 0 || looseReceived >= unitsPerPack || quantity <= 0) {
+        errors.push(`Row ${lineNumber}: enter valid pack and loose quantities; loose must be less than units per pack.`);
       } else if (!Number.isFinite(purchasePrice) || purchasePrice < 0 ||
-                 !Number.isFinite(retailPrice) || retailPrice < 0) {
+                 !Number.isFinite(retailPrice) || retailPrice < 0 ||
+                 (allowLooseSale && (!Number.isFinite(looseRetailPrice) || looseRetailPrice < 0))) {
         errors.push(`Row ${lineNumber}: prices must be valid non-negative numbers.`);
       } else if (Number.isNaN(expiryDate.getTime())) {
         errors.push(`Row ${lineNumber}: expiry date must use YYYY-MM-DD.`);
@@ -673,6 +687,11 @@ exports.uploadMedicines = async (req, res, next) => {
           quantity,
           purchasePrice,
           retailPrice,
+          packUnit: values.pack_unit,
+          looseUnit: values.loose_unit,
+          unitsPerPack,
+          allowLooseSale,
+          looseRetailPrice: allowLooseSale ? looseRetailPrice : 0,
           lineNumber
         });
       }
@@ -696,7 +715,12 @@ exports.uploadMedicines = async (req, res, next) => {
           $inc: { quantity: item.quantity },
           $set: {
             purchasePrice: item.purchasePrice,
-            retailPrice: item.retailPrice
+            retailPrice: item.retailPrice,
+            packUnit: item.packUnit,
+            looseUnit: item.looseUnit,
+            unitsPerPack: item.unitsPerPack,
+            allowLooseSale: item.allowLooseSale,
+            looseRetailPrice: item.looseRetailPrice
           }
         },
         { upsert: true, new: true, runValidators: true }

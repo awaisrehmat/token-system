@@ -45,12 +45,12 @@
           <div class="mt-4">
             <p class="form-label mb-2">Required columns</p>
             <div class="d-flex flex-wrap gap-2">
-              <% ['medicine_name', 'batch_number', 'expiry_date', 'quantity', 'purchase_price', 'retail_price'].forEach((column) => { %>
+              <% ['medicine_name', 'batch_number', 'expiry_date', 'pack_unit', 'loose_unit', 'units_per_pack', 'packs_received', 'loose_received', 'purchase_price', 'retail_price', 'allow_loose_sale', 'loose_retail_price'].forEach((column) => { %>
                 <span class="badge upload-column"><%= column %></span>
               <% }) %>
             </div>
             <p class="form-text mt-2 mb-0">
-              Expiry dates must use YYYY-MM-DD. Existing matching batches receive the uploaded quantity as new stock-in.
+              Expiry dates use YYYY-MM-DD. Prices are per pack; allow_loose_sale accepts yes/no. Existing matching batches receive the converted base quantity.
             </p>
           </div>
 

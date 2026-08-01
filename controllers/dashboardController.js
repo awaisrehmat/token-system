@@ -41,7 +41,7 @@ exports.index = async (req, res, next) => {
         recentSales
       ] = await Promise.all([
         MedicineBatch.aggregate([
-          { $group: { _id: null, batches: { $sum: 1 }, quantity: { $sum: '$quantity' }, value: { $sum: { $multiply: ['$quantity', '$purchasePrice'] } } } }
+          { $group: { _id: null, batches: { $sum: 1 }, quantity: { $sum: '$quantity' }, value: { $sum: { $multiply: [{ $divide: ['$quantity', { $ifNull: ['$unitsPerPack', 1] }] }, '$purchasePrice'] } } } }
         ]),
         MedicineBatch.countDocuments({ quantity: { $lte: 0 } }),
         MedicineBatch.countDocuments({ expiryDate: { $lt: now }, quantity: { $gt: 0 } }),

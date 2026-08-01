@@ -714,6 +714,43 @@ main.container {
   min-width: 7rem;
 }
 
+.sale-pack-table .pack-quantity-input,
+.sale-pack-table .loose-quantity-input {
+  min-width: 6.5rem;
+}
+
+.sale-unit-input {
+  position: relative;
+}
+
+.sale-unit-input small {
+  position: absolute;
+  right: 0.55rem;
+  bottom: 0.25rem;
+  max-width: 4.5rem;
+  overflow: hidden;
+  color: #94a3b8;
+  font-size: 0.58rem;
+  pointer-events: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sale-stock-cell span,
+.sale-stock-cell small {
+  display: block;
+  white-space: nowrap;
+}
+
+.sale-stock-cell span {
+  color: #334155;
+  font-weight: 700;
+}
+
+.sale-stock-cell small {
+  color: var(--app-muted);
+}
+
 .sale-stock-cell,
 .sale-price-cell,
 .sale-line-total {

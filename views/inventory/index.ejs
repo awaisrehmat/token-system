@@ -95,9 +95,9 @@
           <th>Medicine</th>
           <th>Batch</th>
           <th>Expiry</th>
-          <th class="text-end">Quantity</th>
-          <th class="text-end">Purchase Price</th>
-          <th class="text-end">Retail Price</th>
+          <th>Pack / Loose Stock</th>
+          <th class="text-end">Purchase / Pack</th>
+          <th class="text-end">Retail Pricing</th>
           <th>Status</th>
         </tr>
       </thead>
@@ -119,9 +119,9 @@
             <td class="fw-semibold"><%= batch.medicineName %></td>
             <td><span class="font-monospace"><%= batch.batchNumber %></span></td>
             <td class="text-nowrap"><%= batch.expiryDate.toISOString().slice(0, 10) %></td>
-            <td class="text-end fw-semibold"><%= batch.quantity.toLocaleString() %></td>
+            <td><strong><%= formatStock(batch) %></strong><div class="small text-secondary"><%= batch.unitsPerPack || 1 %> <%= batch.looseUnit || 'unit' %>(s) per <%= batch.packUnit || 'pack' %></div></td>
             <td class="text-end text-nowrap">Rs. <%= batch.purchasePrice.toFixed(2) %></td>
-            <td class="text-end text-nowrap">Rs. <%= batch.retailPrice.toFixed(2) %></td>
+            <td class="text-end text-nowrap"><strong>Rs. <%= batch.retailPrice.toFixed(2) %> / <%= batch.packUnit || 'pack' %></strong><% if (batch.allowLooseSale) { %><div class="small text-secondary">Rs. <%= (batch.looseRetailPrice || 0).toFixed(2) %> / <%= batch.looseUnit || 'unit' %></div><% } %></td>
             <td>
               <% if (batch.quantity <= 0) { %>
                 <span class="badge text-bg-secondary">Out of stock</span>
