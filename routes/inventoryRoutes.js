@@ -16,6 +16,8 @@ const upload = multer({
 });
 
 router.get('/', requirePermission('inventory.view'), inventoryController.index);
+router.get('/products/:id', requirePermission('inventory.view'), inventoryController.productDetails);
+router.post('/products/:id/resolve-packaging', requirePermission('stock.upload'), inventoryController.resolvePackaging);
 router.get('/sales', requirePermission('sales.manage'), inventoryController.salesIndex);
 router.get('/sales/:id/bill', requirePermission('sales.manage'), inventoryController.saleBill);
 router.post('/sales/:id/delete', requirePermission('sales.manage'), inventoryController.deleteSale);

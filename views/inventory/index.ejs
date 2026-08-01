@@ -91,18 +91,10 @@
   <div class="table-responsive">
     <table class="table table-hover align-middle mb-0">
       <thead class="table-light">
-        <tr>
-          <th>Medicine</th>
-          <th>Batch</th>
-          <th>Expiry</th>
-          <th>Pack / Loose Stock</th>
-          <th class="text-end">Purchase / Pack</th>
-          <th class="text-end">Retail Pricing</th>
-          <th>Status</th>
-        </tr>
+        <tr><th>Medicine</th><th>Combined Stock</th><th class="text-center">Batches</th><th>Next Expiry</th><th class="text-end">Retail Price</th><th>Status</th><th class="text-end">Actions</th></tr>
       </thead>
       <tbody>
-        <% if (!batches.length) { %>
+        <% if (!products.length) { %>
           <tr>
             <td colspan="7" class="text-center text-secondary py-5">
               <i class="bi bi-capsule d-block fs-2 mb-2"></i>
@@ -111,19 +103,21 @@
           </tr>
         <% } %>
 
-        <% batches.forEach((batch) => {
-          const expired = batch.expiryDate < new Date();
-          const nearExpiry = !expired && batch.expiryDate <= new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+        <% products.forEach((group) => {
+          const product = group.product;
+          const expired = group.batches.some((batch) => batch.quantity > 0 && batch.expiryDate < new Date());
+          const nearExpiry = !expired && group.batches.some((batch) => batch.quantity > 0 && batch.expiryDate <= new Date(Date.now() + 90 * 24 * 60 * 60 * 1000));
         %>
           <tr>
-            <td class="fw-semibold"><%= batch.medicineName %></td>
-            <td><span class="font-monospace"><%= batch.batchNumber %></span></td>
-            <td class="text-nowrap"><%= batch.expiryDate.toISOString().slice(0, 10) %></td>
-            <td><strong><%= formatStock(batch) %></strong><div class="small text-secondary"><%= batch.unitsPerPack || 1 %> <%= batch.looseUnit || 'unit' %>(s) per <%= batch.packUnit || 'pack' %></div></td>
-            <td class="text-end text-nowrap">Rs. <%= batch.purchasePrice.toFixed(2) %></td>
-            <td class="text-end text-nowrap"><strong>Rs. <%= batch.retailPrice.toFixed(2) %> / <%= batch.packUnit || 'pack' %></strong><% if (batch.allowLooseSale) { %><div class="small text-secondary">Rs. <%= (batch.looseRetailPrice || 0).toFixed(2) %> / <%= batch.looseUnit || 'unit' %></div><% } %></td>
+            <td><strong><%= product?.name || group.batches[0].medicineName %></strong><div class="small text-secondary"><% if (product?.packagingStatus === 'CONFLICT') { %>Packaging needs review<% } else { %>1 <%= product?.packUnit || 'pack' %> = <%= product?.unitsPerPack || 1 %> <%= product?.looseUnit || 'unit' %>(s)<% } %></div></td>
+            <td><strong><%= formatStock(group.quantity, product) %></strong></td>
+            <td class="text-center"><span class="badge text-bg-light border"><%= group.batches.length %></span></td>
+            <td class="text-nowrap"><%= group.nextExpiry?.toISOString().slice(0, 10) || '—' %></td>
+            <td class="text-end text-nowrap"><% if (group.prices.size > 1) { %><strong>Multiple prices</strong><% } else { %><strong>Rs. <%= [...group.prices][0]?.toFixed(2) || '0.00' %></strong><% } %></td>
             <td>
-              <% if (batch.quantity <= 0) { %>
+              <% if (product?.packagingStatus === 'CONFLICT') { %>
+                <span class="badge text-bg-danger">Packaging conflict</span>
+              <% } else if (group.quantity <= 0) { %>
                 <span class="badge text-bg-secondary">Out of stock</span>
               <% } else if (expired) { %>
                 <span class="badge text-bg-danger">Expired</span>
@@ -133,6 +127,7 @@
                 <span class="badge text-bg-success">Available</span>
               <% } %>
             </td>
+            <td class="text-end"><a href="/inventory/products/<%= product?._id %>" class="btn btn-outline-primary btn-sm"><i class="bi bi-clock-history me-1"></i> View</a></td>
           </tr>
         <% }) %>
       </tbody>

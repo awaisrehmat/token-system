@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const medicineBatchSchema = new mongoose.Schema({
+  product: { type: mongoose.Schema.Types.ObjectId, ref: 'MedicineProduct', index: true },
   medicineName: { type: String, required: true, trim: true },
   batchNumber: { type: String, required: true, trim: true },
   expiryDate: { type: Date, required: true },

@@ -1,4 +1,5 @@
 const MedicineBatch = require('../models/MedicineBatch');
+const MedicineProduct = require('../models/MedicineProduct');
 const StockTransaction = require('../models/StockTransaction');
 const Sale = require('../models/Sale');
 const SaleCounter = require('../models/SaleCounter');
@@ -20,8 +21,61 @@ const REQUIRED_HEADERS = [
   'loose_retail_price'
 ];
 
+function normalizeMedicineName(value) {
+  return String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function packagingSignature(batch) {
+  return [
+    String(batch.packUnit || 'Pack').trim().toLowerCase(),
+    String(batch.looseUnit || 'Unit').trim().toLowerCase(),
+    Number(batch.unitsPerPack || 1),
+    Boolean(batch.allowLooseSale)
+  ].join('|');
+}
+
+async function ensureProductCatalog() {
+  const batches = await MedicineBatch.find().sort({ createdAt: 1 }).lean();
+  const groups = new Map();
+  for (const batch of batches) {
+    const key = normalizeMedicineName(batch.medicineName);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(batch);
+  }
+
+  for (const [normalizedName, productBatches] of groups) {
+    const reference = productBatches[0];
+    const conflict = new Set(productBatches.map(packagingSignature)).size > 1;
+    let product = await MedicineProduct.findOne({ normalizedName });
+    if (!product) {
+      try {
+        product = await MedicineProduct.create({
+          name: reference.medicineName,
+          normalizedName,
+          packUnit: reference.packUnit || 'Pack',
+          looseUnit: reference.looseUnit || 'Unit',
+          unitsPerPack: reference.unitsPerPack || 1,
+          allowLooseSale: Boolean(reference.allowLooseSale),
+          packagingStatus: conflict ? 'CONFLICT' : 'ACTIVE'
+        });
+      } catch (error) {
+        if (error.code !== 11000) throw error;
+        product = await MedicineProduct.findOne({ normalizedName });
+      }
+    } else if ((conflict ? 'CONFLICT' : product.packagingStatus) !== product.packagingStatus) {
+      product.packagingStatus = 'CONFLICT';
+      await product.save();
+    }
+    await MedicineBatch.updateMany(
+      { _id: { $in: productBatches.map((batch) => batch._id) }, product: { $ne: product._id } },
+      { $set: { product: product._id } }
+    );
+  }
+}
+
 exports.index = async (req, res, next) => {
   try {
+    await ensureProductCatalog();
     const search = String(req.query.search || '').trim();
     const stockStatus = String(req.query.stockStatus || '');
     const expiryStatus = String(req.query.expiryStatus || '');
@@ -59,6 +113,24 @@ exports.index = async (req, res, next) => {
       .sort(sortOptions[sort] || sortOptions.medicine)
       .lean();
 
+    const productDocuments = await MedicineProduct.find({
+      _id: { $in: batches.map((batch) => batch.product).filter(Boolean) }
+    }).lean();
+    const productMap = new Map(productDocuments.map((product) => [String(product._id), product]));
+    const grouped = new Map();
+    for (const batch of batches) {
+      const key = String(batch.product || normalizeMedicineName(batch.medicineName));
+      if (!grouped.has(key)) {
+        grouped.set(key, { product: productMap.get(String(batch.product)), batches: [], quantity: 0, nextExpiry: null, prices: new Set() });
+      }
+      const group = grouped.get(key);
+      group.batches.push(batch);
+      group.quantity += batch.quantity;
+      group.prices.add(batch.retailPrice);
+      if (!group.nextExpiry || batch.expiryDate < group.nextExpiry) group.nextExpiry = batch.expiryDate;
+    }
+    const products = [...grouped.values()];
+
     const summary = batches.reduce((totals, batch) => {
       totals.quantity += batch.quantity;
       totals.stockValue += (batch.quantity / (batch.unitsPerPack || 1)) * batch.purchasePrice;
@@ -68,20 +140,58 @@ exports.index = async (req, res, next) => {
 
     res.render('inventory/index', {
       title: 'Medicine Inventory',
-      batches,
+      products,
       search,
       stockStatus,
       expiryStatus,
       sort,
       summary,
-      formatStock: (batch) => {
-        const unitsPerPack = batch.unitsPerPack || 1;
-        const packs = Math.floor(batch.quantity / unitsPerPack);
-        const loose = batch.quantity % unitsPerPack;
-        if (unitsPerPack === 1) return `${batch.quantity} ${batch.looseUnit || 'unit'}`;
-        return `${packs} ${batch.packUnit || 'pack'}${packs === 1 ? '' : 's'} + ${loose} ${batch.looseUnit || 'unit'}${loose === 1 ? '' : 's'}`;
+      formatStock: (quantity, product) => {
+        const unitsPerPack = product?.unitsPerPack || 1;
+        const packs = Math.floor(quantity / unitsPerPack);
+        const loose = quantity % unitsPerPack;
+        if (unitsPerPack === 1) return `${quantity} ${product?.looseUnit || 'unit'}${quantity === 1 ? '' : 's'}`;
+        return `${packs} ${product?.packUnit || 'pack'}${packs === 1 ? '' : 's'} + ${loose} ${product?.looseUnit || 'unit'}${loose === 1 ? '' : 's'}`;
       }
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.productDetails = async (req, res, next) => {
+  try {
+    await ensureProductCatalog();
+    const product = await MedicineProduct.findById(req.params.id).lean();
+    if (!product) return res.status(404).render('error', { title: 'Medicine Not Found', pageMessage: 'Medicine product not found.' });
+    const batches = await MedicineBatch.find({ product: product._id }).sort({ expiryDate: 1 }).lean();
+    const transactions = await StockTransaction.find({ medicineBatch: { $in: batches.map((batch) => batch._id) } })
+      .populate('medicineBatch', 'batchNumber')
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .lean();
+    const totalQuantity = batches.reduce((sum, batch) => sum + batch.quantity, 0);
+    res.render('inventory/product', { title: product.name, product, batches, transactions, totalQuantity });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.resolvePackaging = async (req, res, next) => {
+  try {
+    const product = await MedicineProduct.findById(req.params.id);
+    const sourceBatch = await MedicineBatch.findOne({ _id: req.body.batchId, product: req.params.id });
+    if (!product || !sourceBatch) return res.redirect(`/inventory?error=${encodeURIComponent('Product or selected batch was not found.')}`);
+    const packaging = {
+      packUnit: sourceBatch.packUnit || 'Pack',
+      looseUnit: sourceBatch.looseUnit || 'Unit',
+      unitsPerPack: sourceBatch.unitsPerPack || 1,
+      allowLooseSale: Boolean(sourceBatch.allowLooseSale)
+    };
+    await MedicineBatch.updateMany({ product: product._id }, { $set: packaging });
+    Object.assign(product, packaging, { packagingStatus: 'ACTIVE' });
+    await product.save();
+    return res.redirect(`/inventory/products/${product._id}?message=${encodeURIComponent('Packaging conflict resolved successfully.')}`);
   } catch (error) {
     next(error);
   }
@@ -184,6 +294,20 @@ exports.addStock = async (req, res, next) => {
   if (form.allowLooseSale && (!Number.isFinite(looseRetailPrice) || looseRetailPrice < 0)) errors.push('Loose retail price must be zero or greater.');
 
   try {
+    const existingProduct = await MedicineProduct.findOne({ normalizedName: normalizeMedicineName(form.medicineName) });
+    if (existingProduct?.packagingStatus === 'CONFLICT') {
+      errors.push('This medicine has a packaging conflict. Resolve it from the medicine history page before adding stock.');
+    } else if (existingProduct) {
+      const submittedSignature = packagingSignature({
+        packUnit: form.packUnit,
+        looseUnit: form.looseUnit,
+        unitsPerPack,
+        allowLooseSale: form.allowLooseSale
+      });
+      if (submittedSignature !== packagingSignature(existingProduct)) {
+        errors.push(`Packaging must match the product master: 1 ${existingProduct.packUnit} = ${existingProduct.unitsPerPack} ${existingProduct.looseUnit}(s).`);
+      }
+    }
     if (errors.length) {
       return res.status(422).render('inventory/add', {
         title: 'Add Medicine Stock',
@@ -199,6 +323,7 @@ exports.addStock = async (req, res, next) => {
         expiryDate
       },
       {
+        $setOnInsert: { product: existingProduct?._id },
         $inc: { quantity },
         $set: {
           purchasePrice,
@@ -222,6 +347,8 @@ exports.addStock = async (req, res, next) => {
       performedBy: req.session?.username || ''
     });
 
+    await ensureProductCatalog();
+
     return res.redirect(`/inventory?message=${encodeURIComponent(`${form.medicineName} stock added successfully.`)}`);
   } catch (error) {
     return next(error);
@@ -229,27 +356,31 @@ exports.addStock = async (req, res, next) => {
 };
 
 async function availableMedicines() {
+  await ensureProductCatalog();
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
-
-  return MedicineBatch.aggregate([
-    { $match: { quantity: { $gt: 0 }, expiryDate: { $gte: today } } },
-    { $sort: { expiryDate: 1 } },
-    {
-      $group: {
-        _id: '$medicineName',
-        availableQuantity: { $sum: '$quantity' },
-        retailPrice: { $first: '$retailPrice' },
-        looseRetailPrice: { $first: '$looseRetailPrice' },
-        packUnit: { $first: '$packUnit' },
-        looseUnit: { $first: '$looseUnit' },
-        unitsPerPack: { $first: '$unitsPerPack' },
-        allowLooseSale: { $first: '$allowLooseSale' },
-        nextExpiry: { $first: '$expiryDate' }
-      }
-    },
-    { $sort: { _id: 1 } }
-  ]);
+  const products = await MedicineProduct.find({ packagingStatus: 'ACTIVE' }).sort({ name: 1 }).lean();
+  const batches = await MedicineBatch.find({
+    product: { $in: products.map((product) => product._id) },
+    quantity: { $gt: 0 },
+    expiryDate: { $gte: today }
+  }).sort({ expiryDate: 1 }).lean();
+  return products.map((product) => {
+    const productBatches = batches.filter((batch) => String(batch.product) === String(product._id));
+    const first = productBatches[0];
+    return {
+      _id: product.name,
+      productId: product._id,
+      availableQuantity: productBatches.reduce((sum, batch) => sum + batch.quantity, 0),
+      retailPrice: first?.retailPrice || 0,
+      looseRetailPrice: first?.looseRetailPrice || 0,
+      packUnit: product.packUnit,
+      looseUnit: product.looseUnit,
+      unitsPerPack: product.unitsPerPack,
+      allowLooseSale: product.allowLooseSale,
+      nextExpiry: first?.expiryDate
+    };
+  }).filter((product) => product.availableQuantity > 0);
 }
 
 exports.showSale = async (req, res, next) => {
@@ -492,8 +623,13 @@ exports.createSale = async (req, res, next) => {
 
     if (!errors.length) {
       for (const item of items) {
+        const productRecord = await MedicineProduct.findOne({ normalizedName: normalizeMedicineName(item.medicineName) }).lean();
+        if (!productRecord || productRecord.packagingStatus !== 'ACTIVE') {
+          errors.push(`${item.medicineName}: packaging must be resolved before sale.`);
+          continue;
+        }
         const batches = await MedicineBatch.find({
-          medicineName: item.medicineName,
+          product: productRecord._id,
           quantity: { $gt: 0 },
           expiryDate: { $gte: today }
         }).sort({ expiryDate: 1, createdAt: 1 }).lean();

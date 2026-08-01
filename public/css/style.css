@@ -678,6 +678,32 @@ main.container {
   text-align: center;
 }
 
+.packaging-choice {
+  display: flex;
+  height: 100%;
+  align-items: flex-start;
+  gap: 0.65rem;
+  border: 1px solid #fecaca;
+  border-radius: 0.7rem;
+  background: #fff;
+  cursor: pointer;
+  padding: 0.75rem;
+}
+
+.packaging-choice span {
+  display: flex;
+  flex-direction: column;
+}
+
+.packaging-choice small {
+  margin-top: 0.2rem;
+  color: var(--app-muted);
+}
+
+.product-packaging-value {
+  font-size: 1.4rem !important;
+}
+
 @media (max-width: 767.98px) {
   .dashboard-hero {
     align-items: flex-start;

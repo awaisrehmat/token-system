@@ -41,7 +41,7 @@
               </small>
               <% if (item.discountPercent > 0) { %><small>Discount: <%= item.discountPercent %>%</small><% } %>
             </td>
-            <td class="number"><% if (item.packQuantity !== undefined) { %><%= item.packQuantity %> <%= item.packUnit %><% if (item.looseQuantity) { %><br><%= item.looseQuantity %> <%= item.looseUnit %><% } %><% } else { %><%= item.quantity %><% } %></td>
+            <td class="number"><% if (item.baseQuantity) { %><%= item.packQuantity %> <%= item.packUnit %><% if (item.looseQuantity) { %><br><%= item.looseQuantity %> <%= item.looseUnit %><% } %><% } else { %><%= item.quantity %><% } %></td>
             <td class="number"><%= item.total.toFixed(2) %></td>
           </tr>
         <% }) %>

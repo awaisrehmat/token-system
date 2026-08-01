@@ -118,7 +118,7 @@
                       <strong><%= item.medicineName %></strong>
                       <% item.allocations.forEach((allocation) => { %><div class="small text-secondary">Batch <%= allocation.batchNumber %> &middot; <%= allocation.quantity %> base unit(s)</div><% }) %>
                     </td>
-                    <td class="text-end"><% if (item.packQuantity !== undefined) { %><%= item.packQuantity %> <%= item.packUnit %><% if (item.looseQuantity) { %><div class="small text-secondary">+ <%= item.looseQuantity %> <%= item.looseUnit %></div><% } %><% } else { %><%= item.quantity %><% } %></td>
+                    <td class="text-end"><% if (item.baseQuantity) { %><%= item.packQuantity %> <%= item.packUnit %><% if (item.looseQuantity) { %><div class="small text-secondary">+ <%= item.looseQuantity %> <%= item.looseUnit %></div><% } %><% } else { %><%= item.quantity %><% } %></td>
                     <td class="text-end">Rs. <%= item.subtotal.toFixed(2) %></td>
                     <td class="text-end"><%= item.discountPercent %>%<div class="small text-secondary">Rs. <%= item.discountAmount.toFixed(2) %></div></td>
                     <td class="text-end fw-bold">Rs. <%= item.total.toFixed(2) %></td>
