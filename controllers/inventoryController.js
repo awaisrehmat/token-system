@@ -233,7 +233,8 @@ exports.resolvePricing = async (req, res, next) => {
     await MedicineBatch.updateMany({ product: product._id }, { $set: pricing });
     product.pricingStatus = 'ACTIVE';
     await product.save();
-    return res.redirect(`/inventory/products/${product._id}?message=${encodeURIComponent(`Selling price from batch ${sourceBatch.batchNumber} is now active.`)}`);
+    const returnTo = req.body.returnTo === '/inventory/sale' ? '/inventory/sale' : `/inventory/products/${product._id}`;
+    return res.redirect(`${returnTo}?message=${encodeURIComponent(`Selling price from batch ${sourceBatch.batchNumber} is now active for ${product.name}.`)}`);
   } catch (error) {
     next(error);
   }
@@ -433,13 +434,31 @@ async function availablePatients() {
   ]);
 }
 
+async function pricingConflictProducts() {
+  await ensureProductCatalog();
+  const products = await MedicineProduct.find({ pricingStatus: 'CONFLICT' }).sort({ name: 1 }).lean();
+  const batches = await MedicineBatch.find({ product: { $in: products.map((product) => product._id) } })
+    .sort({ expiryDate: 1, createdAt: 1 })
+    .lean();
+  return products.map((product) => ({
+    product,
+    batches: batches.filter((batch) => String(batch.product) === String(product._id))
+  }));
+}
+
+async function saleReferenceData() {
+  const [medicines, patients, priceConflicts] = await Promise.all([availableMedicines(), availablePatients(), pricingConflictProducts()]);
+  return { medicines, patients, priceConflicts };
+}
+
 exports.showSale = async (req, res, next) => {
   try {
-    const [medicines, patients] = await Promise.all([availableMedicines(), availablePatients()]);
+    const { medicines, patients, priceConflicts } = await saleReferenceData();
     res.render('inventory/sale', {
       title: 'New Medicine Sale',
       medicines,
       patients,
+      priceConflicts,
       form: { patientMr: '', customerName: 'Walk-in customer', items: Array.from({ length: 4 }, () => ({})) },
       errors: []
     });
@@ -745,11 +764,12 @@ exports.createSale = async (req, res, next) => {
     }
 
     if (errors.length) {
-      const [medicines, patients] = await Promise.all([availableMedicines(), availablePatients()]);
+      const { medicines, patients, priceConflicts } = await saleReferenceData();
       return res.status(422).render('inventory/sale', {
         title: 'New Medicine Sale',
         medicines,
         patients,
+        priceConflicts,
         form,
         errors
       });
@@ -812,11 +832,12 @@ exports.createSale = async (req, res, next) => {
     return res.redirect(`/inventory/sales/${createdSale._id}/bill?print=1&message=${encodeURIComponent(`Sale ${invoiceNumber} completed successfully.`)}`);
   } catch (error) {
     if (error.message.includes('stock changed during the sale')) {
-      const [medicines, patients] = await Promise.all([availableMedicines(), availablePatients()]);
+      const { medicines, patients, priceConflicts } = await saleReferenceData();
       return res.status(409).render('inventory/sale', {
         title: 'New Medicine Sale',
         medicines,
         patients,
+        priceConflicts,
         form,
         errors: [error.message]
       });

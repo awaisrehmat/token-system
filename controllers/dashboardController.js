@@ -1,6 +1,7 @@
 const Patient = require('../models/Patient');
 const Consultant = require('../models/Consultant');
 const MedicineBatch = require('../models/MedicineBatch');
+const MedicineProduct = require('../models/MedicineProduct');
 const Sale = require('../models/Sale');
 const User = require('../models/User');
 const { getClinicDate, formatDateTime, formatCnic } = require('../utils/helpers');
@@ -38,7 +39,8 @@ exports.index = async (req, res, next) => {
         expiredBatches,
         nearExpiryBatches,
         todaySalesTotals,
-        recentSales
+        recentSales,
+        pricingConflicts
       ] = await Promise.all([
         MedicineBatch.aggregate([
           { $group: { _id: null, batches: { $sum: 1 }, quantity: { $sum: '$quantity' }, value: { $sum: { $multiply: [{ $divide: ['$quantity', { $ifNull: ['$unitsPerPack', 1] }] }, '$purchasePrice'] } } } }
@@ -50,8 +52,12 @@ exports.index = async (req, res, next) => {
           { $match: { createdAt: { $gte: startOfToday, $lte: endOfToday }, status: { $ne: 'VOID' } } },
           { $group: { _id: null, count: { $sum: 1 }, revenue: { $sum: '$grandTotal' } } }
         ]),
-        Sale.find({ status: { $ne: 'VOID' } }).sort({ createdAt: -1 }).limit(5).lean()
+        Sale.find({ status: { $ne: 'VOID' } }).sort({ createdAt: -1 }).limit(5).lean(),
+        showUsers ? MedicineProduct.find({ pricingStatus: 'CONFLICT' }).sort({ name: 1 }).lean() : []
       ]);
+      const conflictBatches = pricingConflicts.length
+        ? await MedicineBatch.find({ product: { $in: pricingConflicts.map((product) => product._id) } }).sort({ expiryDate: 1 }).lean()
+        : [];
       pharmacy = {
         batches: stockTotals[0]?.batches || 0,
         quantity: stockTotals[0]?.quantity || 0,
@@ -61,7 +67,11 @@ exports.index = async (req, res, next) => {
         nearExpiryBatches,
         todaySales: todaySalesTotals[0]?.count || 0,
         todayRevenue: todaySalesTotals[0]?.revenue || 0,
-        recentSales
+        recentSales,
+        pricingConflicts: pricingConflicts.map((product) => ({
+          ...product,
+          batches: conflictBatches.filter((batch) => String(batch.product) === String(product._id))
+        }))
       };
     }
 

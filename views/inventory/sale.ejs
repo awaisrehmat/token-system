@@ -8,6 +8,27 @@
 <% if (errors.length) { %><div class="alert alert-danger app-alert"><ul class="mb-0"><% errors.forEach((error) => { %><li><%= error %></li><% }) %></ul></div><% } %>
 <% const selectedMrPatient = patients.find((patient) => patient._id === form.patientMr); %>
 
+<% if (priceConflicts.length) { %>
+  <div class="alert alert-warning app-alert mb-4">
+    <h2 class="h6"><i class="bi bi-tags me-1"></i> Products waiting for price finalization</h2>
+    <p class="small mb-3">Select the selling price to activate. These products cannot be added to this sale until resolved.</p>
+    <% priceConflicts.forEach(({ product, batches }) => { %>
+      <div class="card border-warning mb-2"><div class="card-body py-3">
+        <div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-2"><strong><%= product.name %></strong><a href="/inventory/products/<%= product._id %>" class="small">View complete history</a></div>
+        <% if (product.packagingStatus === 'CONFLICT') { %>
+          <p class="small text-danger mb-0">Resolve this product's packaging conflict first.</p>
+        <% } else { %>
+          <form action="/inventory/products/<%= product._id %>/resolve-pricing" method="post" class="d-flex flex-wrap gap-2 align-items-end">
+            <input type="hidden" name="returnTo" value="/inventory/sale">
+            <div class="flex-grow-1"><label class="form-label small">Choose batch price</label><select class="form-select" name="batchId" required><option value="">Select batch and price</option><% batches.forEach((batch) => { %><option value="<%= batch._id %>">Batch <%= batch.batchNumber %> — Rs. <%= batch.retailPrice.toFixed(2) %> / <%= batch.packUnit %><% if (batch.allowLooseSale) { %> — Loose Rs. <%= (batch.looseRetailPrice || 0).toFixed(2) %><% } %></option><% }) %></select></div>
+            <button class="btn btn-warning" type="submit"><i class="bi bi-check2-circle me-1"></i> Finalize Price</button>
+          </form>
+        <% } %>
+      </div></div>
+    <% }) %>
+  </div>
+<% } %>
+
 <form action="/inventory/sale" method="post" id="saleForm">
   <div class="alert alert-danger app-alert d-none" id="clientSaleError"><i class="bi bi-exclamation-circle-fill me-2"></i>Please correct the highlighted rows.</div>
   <div class="card app-card sale-sheet-card">

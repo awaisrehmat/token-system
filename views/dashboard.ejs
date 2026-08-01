@@ -16,6 +16,20 @@
   <% if (can('users.manage')) { %><a href="/users" class="dashboard-action"><span><i class="bi bi-people"></i></span><div><strong>Manage Users</strong><small>Roles and access</small></div><i class="bi bi-arrow-right"></i></a><% } %>
 </div>
 
+<% if (showUsers && showPharmacy && pharmacy?.pricingConflicts?.length) { %>
+  <div class="alert alert-warning app-alert mb-4">
+    <div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-2"><div><strong><i class="bi bi-tags me-1"></i> Pricing conflicts require attention</strong><div class="small"><%= pharmacy.pricingConflicts.length %> product(s) are blocked from sale until a batch price is finalized.</div></div><a href="/inventory/sale" class="btn btn-warning btn-sm">Resolve on New Sale</a></div>
+    <div class="d-flex flex-column gap-2">
+      <% pharmacy.pricingConflicts.forEach((product) => { %>
+        <a href="/inventory/products/<%= product._id %>" class="d-flex flex-wrap justify-content-between gap-2 text-decoration-none bg-white border rounded p-2">
+          <strong><%= product.name %></strong>
+          <span class="text-secondary small"><%= product.batches.map((batch) => `${batch.batchNumber}: Rs. ${batch.retailPrice.toFixed(2)}`).join(' · ') %></span>
+        </a>
+      <% }) %>
+    </div>
+  </div>
+<% } %>
+
 <% if (showClinic && clinic) { %>
   <div class="dashboard-section-heading"><div><span>Clinic</span><h2>Patient Operations</h2></div><a href="/patients">View patients <i class="bi bi-arrow-right"></i></a></div>
   <div class="row g-3 mb-4">
