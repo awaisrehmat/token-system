@@ -74,4 +74,28 @@
   </div>
 </div>
 
+<div class="card app-card mt-4 overflow-hidden">
+  <div class="card-header bg-white py-3">
+    <h2 class="h5 mb-0"><i class="bi bi-capsule me-2 text-primary"></i>Medicine Sales</h2>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light"><tr><th>Date</th><th>Invoice</th><th>Medicines</th><th class="text-end">Amount</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        <% if (!medicineSales.length) { %><tr><td colspan="6" class="text-center text-secondary py-4">No medicine sales linked to this MR.</td></tr><% } %>
+        <% medicineSales.forEach((sale) => { %>
+          <tr>
+            <td class="text-nowrap"><%= formatDateTime(sale.createdAt) %></td>
+            <td class="font-monospace fw-semibold"><%= sale.invoiceNumber %></td>
+            <td><%= sale.items.map((item) => item.medicineName).join(', ') %></td>
+            <td class="text-end fw-semibold">Rs. <%= sale.grandTotal.toFixed(2) %></td>
+            <td><span class="badge <%= sale.status === 'VOID' ? 'text-bg-secondary' : 'text-bg-success' %>"><%= sale.status === 'VOID' ? 'Deleted' : 'Completed' %></span></td>
+            <td><a href="/inventory/sales/<%= sale._id %>/bill" class="btn btn-sm btn-outline-secondary" title="View bill"><i class="bi bi-receipt"></i></a></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
 <%- include('../partials/footer') %>

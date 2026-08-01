@@ -4,6 +4,7 @@ const Consultant = require('../models/Consultant');
 const DailyCounter = require('../models/DailyCounter');
 const MedicalRecordCounter = require('../models/MedicalRecordCounter');
 const PrintSetting = require('../models/PrintSetting');
+const Sale = require('../models/Sale');
 const {
   getClinicDate,
   formatDateTime,
@@ -185,18 +186,20 @@ exports.history = async (req, res, next) => {
       return res.status(404).render('error', { title: 'Patient Not Found', pageMessage: 'Patient record not found.' });
     }
 
-    const [visits, consultants] = await Promise.all([
+    const [visits, consultants, medicineSales] = await Promise.all([
       Patient.find({ mrNumber: selectedPatient.mrNumber })
         .populate('consultant')
         .sort({ createdAt: -1 })
         .lean(),
-      Consultant.find().sort({ name: 1 }).lean()
+      Consultant.find().sort({ name: 1 }).lean(),
+      Sale.find({ patientMr: selectedPatient.mrNumber }).sort({ createdAt: -1 }).lean()
     ]);
 
     return res.render('patients/history', {
       title: `History ${selectedPatient.mrNumber}`,
       patient: visits[0] || selectedPatient,
       visits,
+      medicineSales,
       consultants,
       formatCnic,
       formatDateTime

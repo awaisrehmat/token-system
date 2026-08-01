@@ -12,7 +12,10 @@
   <div class="card app-card sale-sheet-card">
     <div class="sale-sheet-header">
       <div><span class="sale-sheet-kicker">Sales invoice</span><h2 class="h5 mb-0">Pack &amp; Loose Sale Sheet</h2></div>
-      <div class="sale-customer-field"><label for="customerName" class="form-label">Customer</label><input type="text" class="form-control" id="customerName" name="customerName" maxlength="100" value="<%= form.customerName || '' %>" placeholder="Walk-in customer"></div>
+      <div class="d-flex flex-wrap gap-2">
+        <div class="sale-customer-field"><label for="patientMr" class="form-label">Patient MR <small class="text-secondary">(optional)</small></label><input type="text" class="form-control" id="patientMr" name="patientMr" maxlength="14" value="<%= form.patientMr || '' %>" placeholder="MR-2026-000001" list="patientMrList" autocomplete="off"><datalist id="patientMrList"><% patients.forEach((patient) => { %><option value="<%= patient._id %>" data-patient-name="<%= patient.patientName %>"><%= patient.patientName %></option><% }) %></datalist></div>
+        <div class="sale-customer-field"><label for="customerName" class="form-label">Customer</label><input type="text" class="form-control" id="customerName" name="customerName" maxlength="100" value="<%= form.customerName || '' %>" placeholder="Walk-in customer"></div>
+      </div>
     </div>
 
     <div class="table-responsive">
@@ -52,8 +55,15 @@
 
 <script>
   const saleForm = document.getElementById('saleForm');
+  const patientMr = document.getElementById('patientMr');
+  const customerName = document.getElementById('customerName');
   const saleItems = document.getElementById('saleItems');
   const clientSaleError = document.getElementById('clientSaleError');
+  patientMr.addEventListener('input', () => {
+    patientMr.value = patientMr.value.toUpperCase();
+    const match = [...document.querySelectorAll('#patientMrList option')].find((option) => option.value === patientMr.value);
+    if (match) customerName.value = match.dataset.patientName || '';
+  });
   function errorFor(field, feedback, message) { field.classList.toggle('is-invalid', Boolean(message)); field.setCustomValidity(message); feedback.textContent = message; }
   function refreshSheet() {
     const rows = [...saleItems.querySelectorAll('.sale-item-row')];

@@ -28,6 +28,7 @@ const saleItemSchema = new mongoose.Schema({
 
 const saleSchema = new mongoose.Schema({
   invoiceNumber: { type: String, required: true, unique: true, trim: true },
+  patientMr: { type: String, trim: true, default: '', index: true },
   customerName: { type: String, trim: true, default: 'Walk-in customer' },
   items: { type: [saleItemSchema], required: true },
   subtotal: { type: Number, required: true, min: 0 },

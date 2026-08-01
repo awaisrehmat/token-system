@@ -67,7 +67,7 @@
           <tr>
             <td class="text-nowrap"><%= sale.createdAt.toLocaleString('en-PK') %></td>
             <td class="font-monospace fw-semibold"><%= sale.invoiceNumber %></td>
-            <td><%= sale.customerName %></td>
+            <td><%= sale.customerName %><% if (sale.patientMr) { %><small class="d-block text-primary fw-semibold"><%= sale.patientMr %></small><% } else { %><small class="d-block text-secondary">Walk-in</small><% } %></td>
             <td><%= sale.items.length %></td>
             <td class="text-end fw-semibold"><%= totalQuantity.toLocaleString() %></td>
             <td class="text-end text-nowrap fw-bold <%= sale.status === 'VOID' ? 'text-decoration-line-through text-secondary' : '' %>">Rs. <%= sale.grandTotal.toFixed(2) %></td>
@@ -104,6 +104,7 @@
           <% } %>
           <div class="sale-detail-meta">
             <div><span>Customer</span><strong><%= sale.customerName %></strong></div>
+            <div><span>Patient MR</span><strong><%= sale.patientMr || 'Walk-in sale' %></strong></div>
             <div><span>Sale date</span><strong><%= sale.createdAt.toLocaleString('en-PK') %></strong></div>
             <div><span>Sold by</span><strong><%= sale.performedBy || '—' %></strong></div>
             <div><span>Status</span><strong><%= sale.status === 'VOID' ? 'Deleted' : 'Completed' %></strong></div>

@@ -4,6 +4,7 @@ const StockTransaction = require('../models/StockTransaction');
 const Sale = require('../models/Sale');
 const SaleCounter = require('../models/SaleCounter');
 const PrintSetting = require('../models/PrintSetting');
+const Patient = require('../models/Patient');
 const { getClinicDate } = require('../utils/helpers');
 
 const REQUIRED_HEADERS = [
@@ -383,12 +384,23 @@ async function availableMedicines() {
   }).filter((product) => product.availableQuantity > 0);
 }
 
+async function availablePatients() {
+  return Patient.aggregate([
+    { $sort: { createdAt: -1 } },
+    { $group: { _id: '$mrNumber', patientName: { $first: '$patientName' } } },
+    { $sort: { patientName: 1 } },
+    { $limit: 500 }
+  ]);
+}
+
 exports.showSale = async (req, res, next) => {
   try {
+    const [medicines, patients] = await Promise.all([availableMedicines(), availablePatients()]);
     res.render('inventory/sale', {
       title: 'New Medicine Sale',
-      medicines: await availableMedicines(),
-      form: { customerName: '', items: Array.from({ length: 4 }, () => ({})) },
+      medicines,
+      patients,
+      form: { patientMr: '', customerName: '', items: Array.from({ length: 4 }, () => ({})) },
       errors: []
     });
   } catch (error) {
@@ -409,6 +421,7 @@ exports.salesIndex = async (req, res, next) => {
       conditions.push({
         $or: [
             { invoiceNumber: { $regex: safeSearch, $options: 'i' } },
+            { patientMr: { $regex: safeSearch, $options: 'i' } },
             { customerName: { $regex: safeSearch, $options: 'i' } },
             { 'items.medicineName': { $regex: safeSearch, $options: 'i' } }
         ]
@@ -591,6 +604,7 @@ async function createInvoiceNumber() {
 exports.createSale = async (req, res, next) => {
   const items = saleItems(req.body);
   const form = {
+    patientMr: String(req.body.patientMr || '').trim().toUpperCase(),
     customerName: String(req.body.customerName || '').trim(),
     items
   };
@@ -617,6 +631,12 @@ exports.createSale = async (req, res, next) => {
   if (duplicateNames.length) errors.push('Add each medicine only once per sale.');
 
   try {
+    let linkedPatient = null;
+    if (form.patientMr) {
+      linkedPatient = await Patient.findOne({ mrNumber: form.patientMr }).sort({ createdAt: -1 }).lean();
+      if (!linkedPatient) errors.push('Enter a valid patient MR number, or leave MR blank for a walk-in sale.');
+      else form.customerName = linkedPatient.patientName;
+    }
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
     const preparedItems = [];
@@ -685,9 +705,11 @@ exports.createSale = async (req, res, next) => {
     }
 
     if (errors.length) {
+      const [medicines, patients] = await Promise.all([availableMedicines(), availablePatients()]);
       return res.status(422).render('inventory/sale', {
         title: 'New Medicine Sale',
-        medicines: await availableMedicines(),
+        medicines,
+        patients,
         form,
         errors
       });
@@ -726,6 +748,7 @@ exports.createSale = async (req, res, next) => {
       const discountAmount = preparedItems.reduce((sum, item) => sum + item.discountAmount, 0);
       createdSale = await Sale.create({
         invoiceNumber,
+        patientMr: form.patientMr,
         customerName: form.customerName || 'Walk-in customer',
         items: preparedItems,
         subtotal,
@@ -749,9 +772,11 @@ exports.createSale = async (req, res, next) => {
     return res.redirect(`/inventory/sales/${createdSale._id}/bill?print=1&message=${encodeURIComponent(`Sale ${invoiceNumber} completed successfully.`)}`);
   } catch (error) {
     if (error.message.includes('stock changed during the sale')) {
+      const [medicines, patients] = await Promise.all([availableMedicines(), availablePatients()]);
       return res.status(409).render('inventory/sale', {
         title: 'New Medicine Sale',
-        medicines: await availableMedicines(),
+        medicines,
+        patients,
         form,
         errors: [error.message]
       });

@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const inventoryController = require('../controllers/inventoryController');
-const { requirePermission } = require('../middleware/auth');
+const { requirePermission, requireAnyPermission } = require('../middleware/auth');
 
 const router = express.Router();
 const upload = multer({
@@ -19,7 +19,7 @@ router.get('/', requirePermission('inventory.view'), inventoryController.index);
 router.get('/products/:id', requirePermission('inventory.view'), inventoryController.productDetails);
 router.post('/products/:id/resolve-packaging', requirePermission('stock.upload'), inventoryController.resolvePackaging);
 router.get('/sales', requirePermission('sales.manage'), inventoryController.salesIndex);
-router.get('/sales/:id/bill', requirePermission('sales.manage'), inventoryController.saleBill);
+router.get('/sales/:id/bill', requireAnyPermission('sales.manage', 'patients.manage'), inventoryController.saleBill);
 router.post('/sales/:id/delete', requirePermission('sales.manage'), inventoryController.deleteSale);
 router.get('/sale', requirePermission('sales.manage'), inventoryController.showSale);
 router.post('/sale', requirePermission('sales.manage'), inventoryController.createSale);

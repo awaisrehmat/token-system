@@ -25,6 +25,7 @@
       <div><dt>Invoice</dt><dd><%= sale.invoiceNumber %></dd></div>
       <div><dt>Date</dt><dd><%= sale.createdAt.toLocaleString('en-PK') %></dd></div>
       <div><dt>Customer</dt><dd><%= sale.customerName %></dd></div>
+      <% if (sale.patientMr) { %><div><dt>Patient MR</dt><dd><%= sale.patientMr %></dd></div><% } %>
     </dl>
     <div class="bill-divider"></div>
 
