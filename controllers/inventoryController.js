@@ -410,7 +410,8 @@ exports.saleBill = async (req, res, next) => {
     return res.render('inventory/bill', {
       title: `Bill ${sale.invoiceNumber}`,
       sale,
-      receiptFooter: savedPrintSetting?.footer || 'Thank you for your purchase.'
+      receiptHeader: savedPrintSetting?.saleHeader || savedPrintSetting?.header || 'My Clinic',
+      receiptFooter: savedPrintSetting?.saleFooter || 'Thank you for your purchase.'
     });
   } catch (error) {
     return next(error);
