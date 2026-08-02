@@ -4,6 +4,7 @@ const DEFAULTS = {
   key: 'default',
   header: 'My Clinic',
   footer: 'Please wait for your token number to be called.',
+  tokenPaperSize: '80MM',
   saleHeader: 'My Clinic',
   saleFooter: 'Thank you for your purchase.'
 };
@@ -24,7 +25,8 @@ exports.index = async (req, res, next) => {
 exports.updateReceipt = async (req, res, next) => {
   const printSetting = {
     header: String(req.body.header || '').trim(),
-    footer: String(req.body.footer || '').trim()
+    footer: String(req.body.footer || '').trim(),
+    tokenPaperSize: req.body.tokenA4 === 'on' ? 'A4' : '80MM'
   };
   const errors = [];
   if (!printSetting.header) errors.push('Receipt header is required.');
@@ -34,9 +36,10 @@ exports.updateReceipt = async (req, res, next) => {
 
   try {
     if (errors.length) {
+      const saved = await PrintSetting.findOne({ key: 'default' }).lean() || DEFAULTS;
       return res.status(422).render('settings/index', {
         title: 'Receipt Settings',
-        printSetting,
+        printSetting: { ...saved, ...printSetting },
         errors
       });
     }

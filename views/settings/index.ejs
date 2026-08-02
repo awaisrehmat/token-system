@@ -28,6 +28,11 @@
           <textarea class="form-control" id="printFooter" name="footer" maxlength="250" rows="3" required><%= printSetting.footer %></textarea>
           <div class="form-text">Displayed at the bottom of printed patient tokens.</div>
         </div>
+        <div class="form-check form-switch mt-4">
+          <input class="form-check-input" type="checkbox" role="switch" id="tokenA4" name="tokenA4" <%= printSetting.tokenPaperSize === 'A4' ? 'checked' : '' %>>
+          <label class="form-check-label fw-semibold" for="tokenA4">Print patient tokens on A4 paper</label>
+          <div class="form-text">On: A4 page. Off: compact 80mm receipt, the current default.</div>
+        </div>
       </div>
       <div class="card-footer bg-white d-flex justify-content-end p-3">
         <button type="submit" class="btn btn-primary"><i class="bi bi-floppy me-1"></i> Save Settings</button>
@@ -41,7 +46,7 @@
       <div class="card-body p-4">
         <div class="receipt-preview">
           <h3><%= printSetting.header %></h3>
-          <p>Medicine Sale Receipt</p>
+          <p>Patient Token · <%= printSetting.tokenPaperSize === 'A4' ? 'A4' : '80mm' %></p>
           <div class="receipt-preview-line"></div>
           <div class="receipt-preview-row"><span>Invoice</span><strong>INV-260730-001</strong></div>
           <div class="receipt-preview-row"><span>Total</span><strong>Rs. 950.00</strong></div>

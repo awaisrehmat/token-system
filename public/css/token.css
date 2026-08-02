@@ -120,6 +120,30 @@ dd {
   text-align: center;
 }
 
+.token-paper-a4 .controls {
+  max-width: 186mm;
+}
+
+.token-paper-a4 .token-receipt {
+  width: 186mm;
+  min-height: 273mm;
+  padding: 15mm 18mm;
+  font-size: 17px;
+}
+
+.token-paper-a4 .token-receipt h1 {
+  font-size: 36px;
+}
+
+.token-paper-a4 .token-number {
+  margin: 10mm 0 5mm;
+  font-size: 110px;
+}
+
+.token-paper-a4 dt {
+  flex-basis: 45mm;
+}
+
 @media print {
   html {
     width: 80mm;
@@ -144,5 +168,21 @@ dd {
     width: 80mm;
     margin: 0 !important;
     padding: 0 4mm 2mm !important;
+  }
+
+  html.token-paper-a4,
+  html.token-paper-a4 body {
+    width: auto;
+  }
+
+  body.token-paper-a4 {
+    width: auto;
+  }
+
+  .token-paper-a4 .token-receipt {
+    width: 100%;
+    min-height: 273mm;
+    margin: 0 !important;
+    padding: 10mm 12mm !important;
   }
 }
