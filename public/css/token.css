@@ -290,7 +290,7 @@ dd {
 
 .a4-notes-column {
   display: grid;
-  grid-template-rows: repeat(4, 13mm) 18mm 23mm 20mm 20mm 1fr;
+  grid-template-rows: repeat(4, 13mm) 18mm 23mm repeat(3, 20mm) 1fr;
   padding: 3mm 5mm 2mm 2mm;
   border-right: 1px solid #444;
 }

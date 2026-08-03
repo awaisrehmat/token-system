@@ -42,6 +42,7 @@
         <div><strong>History</strong><span></span></div>
         <div><strong>Findings</strong><span></span></div>
         <div><strong>Investigations</strong><span></span></div>
+        <div><strong>VCO</strong><span></span></div>
       </aside>
       <main class="a4-rx-area">
         <section class="a4-clinical-summary">
@@ -53,7 +54,7 @@
         <div class="a4-rx-mark">Rx</div><div class="a4-signature">Signature &amp; Stamp</div>
       </main>
     </section>
-    <footer class="a4-prescription-footer"><span><%= printSetting.a4FooterLeft || printSetting.footer %></span><span class="a4-doctor-marks" aria-label="Doctor marking options"><b>1</b><b>2</b><b>3</b><b>4</b></span><span><%= printSetting.a4FooterRight || patient.consultant?.name || '' %></span></footer>
+    <footer class="a4-prescription-footer"><span><%= printSetting.a4FooterLeft || printSetting.footer %></span><span class="a4-doctor-marks" aria-label="Doctor marking options"><b>0</b><b>1</b><b>2</b><b>3</b><b>4</b></span><span><%= printSetting.a4FooterRight || patient.consultant?.name || '' %></span></footer>
   </article>
   <% } else { %>
   <article class="token-receipt">
