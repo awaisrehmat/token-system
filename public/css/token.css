@@ -152,7 +152,7 @@ dd {
   min-height: 0;
   flex-direction: column;
   margin: 0 auto 20px;
-  padding: 8mm 8mm 6mm;
+  padding: 6mm 8mm 6mm;
   overflow: hidden;
   background: #fff;
   color: #202020;
@@ -162,7 +162,7 @@ dd {
 .a4-clinic-header {
   display: flex;
   min-height: 0;
-  flex: 0 0 34mm;
+  flex: 0 0 27mm;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12mm;
@@ -290,8 +290,8 @@ dd {
 
 .a4-notes-column {
   display: grid;
-  grid-template-rows: repeat(4, 13mm) 18mm 23mm repeat(3, 20mm) 1fr;
-  padding: 3mm 5mm 2mm 2mm;
+  grid-template-rows: repeat(10, minmax(0, 1fr));
+  padding: 7mm 5mm 2mm 2mm;
   border-right: 1px solid #444;
 }
 
@@ -299,10 +299,6 @@ dd {
   display: flex;
   flex-direction: column;
   gap: 1mm;
-}
-
-.a4-notes-column > div:first-child {
-  padding-top: 4mm;
 }
 
 .a4-notes-column strong {
@@ -416,7 +412,7 @@ dd {
     height: 296mm;
     min-height: 0;
     margin: 0;
-    padding: 8mm 8mm 6mm;
+    padding: 6mm 8mm 6mm;
     overflow: hidden;
     break-inside: avoid;
     page-break-after: avoid;
