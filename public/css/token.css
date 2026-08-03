@@ -301,6 +301,10 @@ dd {
   gap: 1mm;
 }
 
+.a4-notes-column > div:first-child {
+  padding-top: 4mm;
+}
+
 .a4-notes-column strong {
   font-weight: 500;
 }
