@@ -2,7 +2,7 @@
 
 <div class="page-heading mb-4">
   <h1 class="h3 mb-1">Physician Management</h1>
-  <p class="text-secondary mb-0"><%= can('physicians.manage') ? 'Add or remove clinic physicians.' : 'View clinic physicians.' %></p>
+  <p class="text-secondary mb-0"><%= can('physicians.manage') ? 'Add and manage clinic physicians.' : 'View clinic physicians.' %></p>
 </div>
 
 <div class="row g-4">
@@ -30,20 +30,15 @@
     <div class="card app-card overflow-hidden">
       <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
-          <thead class="table-light"><tr><th>Name</th><th>Specialization</th><% if (can('physicians.manage')) { %><th class="text-end">Action</th><% } %></tr></thead>
+          <thead class="table-light"><tr><th>Name</th><th>Specialization</th></tr></thead>
           <tbody>
             <% if (!consultants.length) { %>
-              <tr><td colspan="<%= can('physicians.manage') ? 3 : 2 %>" class="text-center text-secondary py-5">No physicians added yet.</td></tr>
+              <tr><td colspan="2" class="text-center text-secondary py-5">No physicians added yet.</td></tr>
             <% } %>
             <% consultants.forEach((consultant) => { %>
               <tr>
                 <td class="fw-medium"><%= consultant.name %></td>
                 <td><%= consultant.specialization %></td>
-                <% if (can('physicians.manage')) { %><td class="text-end">
-                  <form action="/consultants/<%= consultant._id %>/delete" method="post" class="delete-form">
-                    <button type="submit" class="btn btn-sm btn-action btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
-                  </form>
-                </td><% } %>
               </tr>
             <% }) %>
           </tbody>

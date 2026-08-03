@@ -6,6 +6,6 @@ const router = express.Router();
 
 router.get('/', requireAnyPermission('physicians.view', 'physicians.manage'), consultantController.index);
 router.post('/', requirePermission('physicians.manage'), consultantController.create);
-router.post('/:id/delete', requirePermission('physicians.manage'), consultantController.remove);
+// Physician deletion is intentionally disabled to preserve patient and visit history.
 
 module.exports = router;
