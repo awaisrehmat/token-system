@@ -26,8 +26,9 @@ router.get('/sale', requirePermission('sales.manage'), inventoryController.showS
 router.post('/sale', requirePermission('sales.manage'), inventoryController.createSale);
 router.get('/add', requirePermission('stock.upload'), inventoryController.showAddStock);
 router.post('/add', requirePermission('stock.upload'), inventoryController.addStock);
-router.get('/upload', requirePermission('stock.upload'), inventoryController.showUpload);
-router.get('/upload/template', requirePermission('stock.upload'), inventoryController.downloadTemplate);
-router.post('/upload', requirePermission('stock.upload'), upload.single('medicineFile'), inventoryController.uploadMedicines);
+// CSV stock upload is temporarily disabled. Keep these routes for easy restoration.
+// router.get('/upload', requirePermission('stock.upload'), inventoryController.showUpload);
+// router.get('/upload/template', requirePermission('stock.upload'), inventoryController.downloadTemplate);
+// router.post('/upload', requirePermission('stock.upload'), upload.single('medicineFile'), inventoryController.uploadMedicines);
 
 module.exports = router;
