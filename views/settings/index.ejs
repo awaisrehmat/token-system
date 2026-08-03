@@ -33,6 +33,12 @@
           <label class="form-check-label fw-semibold" for="tokenA4">Print patient tokens on A4 paper</label>
           <div class="form-text">On: A4 page. Off: compact 80mm receipt, the current default.</div>
         </div>
+        <div class="border-top mt-4 pt-4">
+          <h3 class="h6">A4 Prescription Details</h3>
+          <div class="mb-3"><label for="a4ClinicDetails" class="form-label">Clinic address and registration</label><textarea class="form-control" id="a4ClinicDetails" name="a4ClinicDetails" rows="3" maxlength="400"><%= printSetting.a4ClinicDetails || '' %></textarea></div>
+          <div class="mb-3"><label for="a4DoctorDetails" class="form-label">Doctor qualification / registration</label><input class="form-control" id="a4DoctorDetails" name="a4DoctorDetails" maxlength="200" value="<%= printSetting.a4DoctorDetails || '' %>"></div>
+          <div class="row g-3"><div class="col-md-6"><label for="a4FooterLeft" class="form-label">A4 footer left</label><input class="form-control" id="a4FooterLeft" name="a4FooterLeft" maxlength="150" value="<%= printSetting.a4FooterLeft || '' %>"></div><div class="col-md-6"><label for="a4FooterRight" class="form-label">A4 footer right</label><input class="form-control" id="a4FooterRight" name="a4FooterRight" maxlength="150" value="<%= printSetting.a4FooterRight || '' %>"></div></div>
+        </div>
       </div>
       <div class="card-footer bg-white d-flex justify-content-end p-3">
         <button type="submit" class="btn btn-primary"><i class="bi bi-floppy me-1"></i> Save Settings</button>

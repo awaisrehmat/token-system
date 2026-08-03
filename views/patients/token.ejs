@@ -18,8 +18,8 @@
   <% if (printSetting.tokenPaperSize === 'A4') { %>
   <article class="a4-prescription">
     <header class="a4-clinic-header">
-      <div class="a4-clinic-identity"><h1><%= printSetting.header %></h1><p>Patient Consultation &amp; Prescription</p></div>
-      <div class="a4-doctor"><strong><%= patient.consultant ? patient.consultant.name : 'Consulting Physician' %></strong><span><%= patient.consultant?.specialization || 'Medical Consultant' %></span></div>
+      <div class="a4-clinic-identity"><h1><%= printSetting.header %></h1><% String(printSetting.a4ClinicDetails || '').split('\n').filter(Boolean).forEach((line) => { %><p><%= line %></p><% }) %></div>
+      <div class="a4-doctor"><strong><%= patient.consultant ? patient.consultant.name : 'Consulting Physician' %></strong><span><%= printSetting.a4DoctorDetails || patient.consultant?.specialization || 'Medical Consultant' %></span></div>
     </header>
     <div class="a4-reference-row"><strong class="a4-token"><span>Token</span> <%= patient.tokenNumber %></strong><strong>MR # <%= patient.mrNumber %></strong></div>
     <section class="a4-patient-band">
@@ -53,7 +53,7 @@
         <div class="a4-rx-mark">Rx</div><div class="a4-signature">Signature &amp; Stamp</div>
       </main>
     </section>
-    <footer class="a4-prescription-footer"><span><%= printSetting.footer %></span><span><%= patient.consultant?.name || '' %></span></footer>
+    <footer class="a4-prescription-footer"><span><%= printSetting.a4FooterLeft || printSetting.footer %></span><span><%= printSetting.a4FooterRight || patient.consultant?.name || '' %></span></footer>
   </article>
   <% } else { %>
   <article class="token-receipt">

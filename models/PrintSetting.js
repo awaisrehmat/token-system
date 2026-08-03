@@ -6,6 +6,10 @@ const printSettingSchema = new mongoose.Schema(
     header: { type: String, required: true, trim: true, maxlength: 120 },
     footer: { type: String, required: true, trim: true, maxlength: 250 },
     tokenPaperSize: { type: String, enum: ['80MM', 'A4'], default: '80MM' },
+    a4ClinicDetails: { type: String, trim: true, maxlength: 400, default: '' },
+    a4DoctorDetails: { type: String, trim: true, maxlength: 200, default: '' },
+    a4FooterLeft: { type: String, trim: true, maxlength: 150, default: '' },
+    a4FooterRight: { type: String, trim: true, maxlength: 150, default: '' },
     saleHeader: { type: String, required: true, trim: true, maxlength: 120, default: 'My Clinic' },
     saleFooter: { type: String, required: true, trim: true, maxlength: 250, default: 'Thank you for your purchase.' }
   },
