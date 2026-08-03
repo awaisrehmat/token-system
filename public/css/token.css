@@ -144,6 +144,200 @@ dd {
   flex-basis: 45mm;
 }
 
+.a4-prescription {
+  position: relative;
+  display: flex;
+  height: 272mm;
+  width: 210mm;
+  min-height: 0;
+  flex-direction: column;
+  margin: 0 auto 20px;
+  padding: 12mm 14mm 8mm;
+  overflow: hidden;
+  background: #fff;
+  color: #202020;
+  font-size: 13px;
+}
+
+.a4-clinic-header {
+  display: flex;
+  min-height: 0;
+  flex: 0 0 25mm;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12mm;
+}
+
+.a4-clinic-identity h1 {
+  margin: 0;
+  font-family: Georgia, serif;
+  font-size: 34px;
+  line-height: 1;
+}
+
+.a4-clinic-identity p,
+.a4-doctor span {
+  display: block;
+  margin: 3px 0 0;
+  color: #555;
+}
+
+.a4-doctor {
+  max-width: 75mm;
+  text-align: right;
+}
+
+.a4-doctor strong {
+  display: block;
+  font-size: 19px;
+}
+
+.a4-reference-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  padding: 2mm 4mm 3mm;
+  border-bottom: 2.5mm solid #d84c43;
+  flex: 0 0 11mm;
+}
+
+.a4-reference-row .a4-token {
+  grid-column: 2;
+  font-size: 25px;
+}
+
+.a4-reference-row > strong:last-child {
+  grid-column: 3;
+  justify-self: end;
+}
+
+.a4-token span {
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.a4-patient-band {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 3mm 5mm;
+  margin-top: 2mm;
+  padding: 4mm;
+  background: #f0eee9;
+  flex: 0 0 25mm;
+  overflow: hidden;
+}
+
+.a4-patient-band > div,
+.a4-clinical-summary > div {
+  display: flex;
+  min-width: 0;
+  gap: 2mm;
+  align-items: baseline;
+}
+
+.a4-patient-band span,
+.a4-clinical-summary span {
+  flex: none;
+  color: #555;
+}
+
+.a4-patient-band strong,
+.a4-clinical-summary strong {
+  min-width: 0;
+  flex: 1;
+  padding: 0 1mm 1mm;
+  border-bottom: 1px dotted #777;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.a4-patient-band > div:nth-child(1) { grid-column: span 4; }
+.a4-patient-band > div:nth-child(2) { grid-column: span 3; }
+.a4-patient-band > div:nth-child(3) { grid-column: span 2; }
+.a4-patient-band > div:nth-child(4) { grid-column: span 1; }
+.a4-patient-band > div:nth-child(5) { grid-column: span 2; }
+.a4-patient-band > div:nth-child(3),
+.a4-patient-band > div:nth-child(4),
+.a4-patient-band > div:nth-child(5),
+.a4-clinical-summary > div:nth-child(-n+3) {
+  flex-direction: column;
+  gap: 0;
+  align-items: stretch;
+}
+.a4-patient-band .a4-wide {
+  grid-column: span 8;
+}
+.a4-patient-band > div:nth-child(7) { grid-column: span 4; }
+
+.a4-clinical-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.3fr 4.7fr;
+  gap: 4mm;
+  padding: 3mm 5mm 2mm;
+  flex: 0 0 15mm;
+  overflow: hidden;
+}
+
+.a4-work-area {
+  display: grid;
+  min-height: 0;
+  flex: 1 1 auto;
+  grid-template-columns: 48mm 1fr;
+  border-bottom: 1px solid #333;
+}
+
+.a4-notes-column {
+  display: grid;
+  grid-template-rows: repeat(4, 13mm) 18mm 23mm 20mm 20mm 1fr;
+  padding: 3mm 5mm 2mm 2mm;
+  border-right: 1px solid #444;
+}
+
+.a4-notes-column > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1mm;
+}
+
+.a4-notes-column strong {
+  font-weight: 500;
+}
+
+.a4-notes-column span {
+  font-size: 11px;
+}
+
+.a4-rx-area {
+  position: relative;
+  padding: 0;
+}
+
+.a4-rx-mark {
+  padding: 2mm 6mm;
+  font-family: Georgia, serif;
+  font-size: 32px;
+  font-style: italic;
+}
+
+.a4-signature {
+  position: absolute;
+  right: 15mm;
+  bottom: 12mm;
+  font-size: 13px;
+}
+
+.a4-prescription-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8mm;
+  padding: 3mm 2mm 0;
+  color: #444;
+  font-weight: 700;
+  flex: 0 0 9mm;
+  overflow: hidden;
+}
+
 @media print {
   html {
     width: 80mm;
@@ -184,5 +378,19 @@ dd {
     min-height: 273mm;
     margin: 0 !important;
     padding: 10mm 12mm !important;
+  }
+
+  .a4-prescription {
+    width: 210mm;
+    height: 296mm;
+    min-height: 0;
+    margin: 0;
+    padding: 10mm 14mm 7mm;
+    overflow: hidden;
+    break-inside: avoid;
+    page-break-after: avoid;
+    page-break-inside: avoid;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 }
