@@ -19,6 +19,8 @@ router.get('/', requirePermission('inventory.view'), inventoryController.index);
 router.get('/products/:id', requirePermission('inventory.view'), inventoryController.productDetails);
 router.post('/products/:id/resolve-packaging', requirePermission('stock.upload'), inventoryController.resolvePackaging);
 router.post('/products/:id/resolve-pricing', requirePermission('stock.upload'), inventoryController.resolvePricing);
+router.get('/batches/:id/edit', requirePermission('stock.upload'), inventoryController.editBatchForm);
+router.post('/batches/:id/edit', requirePermission('stock.upload'), inventoryController.updateBatch);
 router.get('/sales', requirePermission('sales.manage'), inventoryController.salesIndex);
 router.get('/sales/:id/bill', requireAnyPermission('sales.manage', 'patients.manage'), inventoryController.saleBill);
 router.post('/sales/:id/delete', requirePermission('sales.manage'), inventoryController.deleteSale);

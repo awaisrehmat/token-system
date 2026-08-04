@@ -198,6 +198,112 @@ exports.productDetails = async (req, res, next) => {
   }
 };
 
+function batchEditForm(batch, body = {}) {
+  return {
+    batchNumber: body.batchNumber ?? batch.batchNumber,
+    expiryDate: body.expiryDate ?? batch.expiryDate.toISOString().slice(0, 10),
+    quantity: body.quantity ?? String(batch.quantity),
+    purchasePrice: body.purchasePrice ?? String(batch.purchasePrice),
+    retailPrice: body.retailPrice ?? String(batch.retailPrice),
+    looseRetailPrice: body.looseRetailPrice ?? String(batch.looseRetailPrice || 0),
+    reason: body.reason ?? ''
+  };
+}
+
+async function renderBatchEdit(res, batch, form, errors = [], priceChange = null, status = 200) {
+  const product = await MedicineProduct.findById(batch.product).lean();
+  return res.status(status).render('inventory/edit-batch', {
+    title: `Edit ${batch.medicineName}`,
+    batch,
+    product,
+    form,
+    errors,
+    priceChange
+  });
+}
+
+exports.editBatchForm = async (req, res, next) => {
+  try {
+    const batch = await MedicineBatch.findById(req.params.id).lean();
+    if (!batch) return res.status(404).render('error', { title: 'Batch Not Found', pageMessage: 'Medicine batch not found.' });
+    return renderBatchEdit(res, batch, batchEditForm(batch));
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.updateBatch = async (req, res, next) => {
+  try {
+    const batch = await MedicineBatch.findById(req.params.id);
+    if (!batch) return res.status(404).render('error', { title: 'Batch Not Found', pageMessage: 'Medicine batch not found.' });
+
+    const form = batchEditForm(batch, req.body);
+    const expiryDate = new Date(`${form.expiryDate}T00:00:00.000Z`);
+    const values = {
+      batchNumber: String(form.batchNumber).trim(),
+      expiryDate,
+      quantity: Number(form.quantity),
+      purchasePrice: Number(form.purchasePrice),
+      retailPrice: Number(form.retailPrice),
+      looseRetailPrice: batch.allowLooseSale ? Number(form.looseRetailPrice) : 0
+    };
+    const reason = String(form.reason).trim();
+    const errors = [];
+    if (!values.batchNumber) errors.push('Batch number is required.');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(form.expiryDate) || Number.isNaN(expiryDate.getTime())) errors.push('Enter a valid expiry date.');
+    if (!Number.isInteger(values.quantity) || values.quantity < 0) errors.push('Base quantity must be a whole number of zero or greater.');
+    if (!Number.isFinite(values.purchasePrice) || values.purchasePrice < 0) errors.push('Purchase price must be zero or greater.');
+    if (!Number.isFinite(values.retailPrice) || values.retailPrice < 0) errors.push('Retail price must be zero or greater.');
+    if (batch.allowLooseSale && (!Number.isFinite(values.looseRetailPrice) || values.looseRetailPrice < 0)) errors.push('Loose retail price must be zero or greater.');
+    if (reason.length < 5) errors.push('Enter a reason of at least 5 characters for the audit log.');
+    if (errors.length) return renderBatchEdit(res, batch, form, errors, null, 422);
+
+    const priceChanges = [];
+    if (batch.purchasePrice !== values.purchasePrice) priceChanges.push(`Purchase: Rs. ${batch.purchasePrice.toFixed(2)} → Rs. ${values.purchasePrice.toFixed(2)}`);
+    if (batch.retailPrice !== values.retailPrice) priceChanges.push(`Retail: Rs. ${batch.retailPrice.toFixed(2)} → Rs. ${values.retailPrice.toFixed(2)}`);
+    if (batch.allowLooseSale && batch.looseRetailPrice !== values.looseRetailPrice) priceChanges.push(`Loose retail: Rs. ${(batch.looseRetailPrice || 0).toFixed(2)} → Rs. ${values.looseRetailPrice.toFixed(2)}`);
+    if (priceChanges.length && req.body.confirmRateChange !== 'yes') {
+      return renderBatchEdit(res, batch, form, [], priceChanges, 409);
+    }
+
+    const formatDate = (value) => new Date(value).toISOString().slice(0, 10);
+    const definitions = [
+      ['batchNumber', 'Batch number', batch.batchNumber, values.batchNumber],
+      ['expiryDate', 'Expiry date', formatDate(batch.expiryDate), formatDate(values.expiryDate)],
+      ['quantity', `Quantity (${batch.looseUnit || 'base units'})`, batch.quantity, values.quantity],
+      ['purchasePrice', 'Purchase price / pack', batch.purchasePrice.toFixed(2), values.purchasePrice.toFixed(2)],
+      ['retailPrice', 'Retail price / pack', batch.retailPrice.toFixed(2), values.retailPrice.toFixed(2)],
+      ['looseRetailPrice', 'Loose retail price', (batch.looseRetailPrice || 0).toFixed(2), values.looseRetailPrice.toFixed(2)]
+    ];
+    const changes = definitions
+      .filter(([, , before, after]) => String(before) !== String(after))
+      .map(([field, label, before, after]) => ({ field, label, before: String(before), after: String(after) }));
+    if (!changes.length) return renderBatchEdit(res, batch, form, ['No values were changed.'], null, 422);
+
+    const quantityDifference = values.quantity - batch.quantity;
+    Object.assign(batch, values);
+    await batch.save();
+    await StockTransaction.create({
+      medicineBatch: batch._id,
+      type: 'ADJUSTMENT',
+      quantity: Math.abs(quantityDifference) || 0.000001,
+      adjustmentDirection: quantityDifference > 0 ? 'IN' : quantityDifference < 0 ? 'OUT' : 'NONE',
+      reference: 'Manual stock edit',
+      remarks: reason,
+      performedBy: req.session?.username || '',
+      changes
+    });
+    await ensureProductCatalog();
+    return res.redirect(`/inventory/products/${batch.product}?message=${encodeURIComponent(`Batch ${batch.batchNumber} updated and logged successfully.`)}`);
+  } catch (error) {
+    if (error.code === 11000) {
+      const batch = await MedicineBatch.findById(req.params.id).lean();
+      if (batch) return renderBatchEdit(res, batch, batchEditForm(batch, req.body), ['That batch number and expiry combination already exists.'], null, 409);
+    }
+    return next(error);
+  }
+};
+
 exports.resolvePackaging = async (req, res, next) => {
   try {
     const product = await MedicineProduct.findById(req.params.id);
