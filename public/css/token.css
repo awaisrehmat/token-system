@@ -354,7 +354,14 @@ dd {
 
 .a4-doctor-marks {
   display: inline-flex;
+  align-items: center;
   gap: 1mm;
+}
+
+.a4-doctor-marks em {
+  margin-right: 1mm;
+  font-style: normal;
+  font-weight: 700;
 }
 
 .a4-doctor-marks b {
