@@ -61,7 +61,11 @@ exports.create = async (req, res, next) => {
   } catch (error) {
     console.error('Unable to create user:', error);
     if (error.code === 11000) {
-      return renderCreateError(res, form, ['That username is already in use.'], 409);
+      const duplicateField = Object.keys(error.keyPattern || error.keyValue || {})[0];
+      const message = duplicateField === 'username'
+        ? 'That username is already in use.'
+        : `A user could not be created because the production database has a conflicting unique index${duplicateField ? ` on “${duplicateField}”` : ''}. Redeploy the latest version to repair the user indexes.`;
+      return renderCreateError(res, form, [message], 409);
     }
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors || {}).map((item) => item.message);

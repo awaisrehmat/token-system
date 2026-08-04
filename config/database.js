@@ -2,6 +2,43 @@ const mongoose = require('mongoose');
 
 let connectionPromise = null;
 
+function legacyUsernameFor(user) {
+  const normalizedName = String(user.name || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '.')
+    .replace(/^[._-]+|[._-]+$/g, '')
+    .slice(0, 50);
+  const base = normalizedName.length >= 3 ? normalizedName : 'user';
+  return `${base}-${String(user._id).slice(-6)}`;
+}
+
+async function ensureUserIndexes() {
+  const User = require('../models/User');
+  const legacyUsers = await User.find({
+    $or: [
+      { username: { $exists: false } },
+      { username: null },
+      { username: '' }
+    ]
+  }).select('_id name').lean();
+
+  if (legacyUsers.length) {
+    await User.bulkWrite(legacyUsers.map((user) => ({
+      updateOne: {
+        filter: { _id: user._id },
+        update: { $set: { username: legacyUsernameFor(user) } }
+      }
+    })));
+    console.log(`Assigned usernames to ${legacyUsers.length} legacy user account(s)`);
+  }
+
+  // Production databases can retain indexes from an older User schema.
+  // Reconcile them so an unrelated stale unique index cannot reject inserts.
+  await User.syncIndexes();
+}
+
 async function ensurePhysicianTokenIndex() {
   const Patient = require('../models/Patient');
   const DailyCounter = require('../models/DailyCounter');
@@ -91,7 +128,10 @@ async function connectDatabase() {
         serverSelectionTimeoutMS: 10000
       })
       .then(async () => {
-        await ensurePhysicianTokenIndex();
+        await Promise.all([
+          ensurePhysicianTokenIndex(),
+          ensureUserIndexes()
+        ]);
         console.log('Connected to MongoDB');
         return mongoose.connection;
       })
