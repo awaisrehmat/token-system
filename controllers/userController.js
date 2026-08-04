@@ -6,6 +6,17 @@ const ROLE_LABELS = {
   pharmacist: 'Pharmacist'
 };
 
+async function renderCreateError(res, form, errors, status = 422) {
+  const users = await User.find().sort({ createdAt: -1 }).lean();
+  return res.status(status).render('users/index', {
+    title: 'Users & Permissions',
+    users,
+    roleLabels: ROLE_LABELS,
+    errors,
+    form
+  });
+}
+
 exports.index = async (req, res, next) => {
   try {
     const users = await User.find().sort({ createdAt: -1 }).lean();
@@ -40,14 +51,7 @@ exports.create = async (req, res, next) => {
   try {
     if (await User.exists({ username: form.username })) errors.push('That username is already in use.');
     if (errors.length) {
-      const users = await User.find().sort({ createdAt: -1 }).lean();
-      return res.status(422).render('users/index', {
-        title: 'Users & Permissions',
-        users,
-        roleLabels: ROLE_LABELS,
-        errors,
-        form
-      });
+      return renderCreateError(res, form, errors);
     }
 
     const user = new User(form);
@@ -55,7 +59,18 @@ exports.create = async (req, res, next) => {
     await user.save();
     return res.redirect(`/users?message=${encodeURIComponent(`${user.name} was added successfully.`)}`);
   } catch (error) {
-    return next(error);
+    console.error('Unable to create user:', error);
+    if (error.code === 11000) {
+      return renderCreateError(res, form, ['That username is already in use.'], 409);
+    }
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors || {}).map((item) => item.message);
+      return renderCreateError(res, form, messages.length ? messages : ['The user details are invalid.']);
+    }
+    if (error.code === 'ERR_CRYPTO_INVALID_SCRYPT_PARAMS' || /scrypt/i.test(error.message || '')) {
+      return renderCreateError(res, form, ['The server could not securely process this password. Please try another password or check the production runtime configuration.'], 500);
+    }
+    return renderCreateError(res, form, [`User could not be created: ${error.message || 'Unknown server error.'}`], 500);
   }
 };
 
