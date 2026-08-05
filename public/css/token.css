@@ -221,11 +221,11 @@ dd {
 .a4-patient-band {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 3mm 5mm;
+  gap: 2mm;
   margin-top: 2mm;
   padding: 4mm;
   background: #f0eee9;
-  flex: 0 0 31mm;
+  flex: 0 0 36mm;
   overflow: hidden;
 }
 
@@ -256,8 +256,8 @@ dd {
 
 .a4-patient-band > div:nth-child(1) { grid-column: span 6; }
 .a4-patient-band > div:nth-child(2) { grid-column: span 6; }
-.a4-patient-band > div:nth-child(3) { grid-column: span 5; }
-.a4-patient-band > div:nth-child(4) { grid-column: span 3; }
+.a4-patient-band > div:nth-child(3) { grid-column: span 4; }
+.a4-patient-band > div:nth-child(4) { grid-column: span 4; }
 .a4-patient-band > div:nth-child(5) { grid-column: span 4; }
 .a4-patient-band > div:nth-child(3),
 .a4-patient-band > div:nth-child(4),
@@ -268,9 +268,15 @@ dd {
   align-items: stretch;
 }
 .a4-patient-band .a4-wide {
-  grid-column: span 5;
+  grid-column: span 4;
 }
-.a4-patient-band > div:nth-child(7) { grid-column: span 3; }
+
+.a4-patient-band > div {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+.a4-patient-band > div:nth-child(7) { grid-column: span 4; }
 .a4-patient-band > div:nth-child(8) { grid-column: span 4; }
 
 .a4-clinical-summary {
