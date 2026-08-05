@@ -2,6 +2,7 @@ const Patient = require('../models/Patient');
 const Consultant = require('../models/Consultant');
 const MedicineBatch = require('../models/MedicineBatch');
 const MedicineProduct = require('../models/MedicineProduct');
+const StockTransaction = require('../models/StockTransaction');
 const Sale = require('../models/Sale');
 const User = require('../models/User');
 const { getClinicDate, formatDateTime, formatCnic } = require('../utils/helpers');
@@ -21,6 +22,7 @@ exports.index = async (req, res, next) => {
     let clinic = null;
     let pharmacy = null;
     let userCount = null;
+    let medicineEditLogs = [];
 
     if (showClinic) {
       const [todayPatients, patientRecords, physicians, recentPatients] = await Promise.all([
@@ -75,7 +77,16 @@ exports.index = async (req, res, next) => {
       };
     }
 
-    if (showUsers) userCount = await User.countDocuments({ isActive: true });
+    if (showUsers) {
+      [userCount, medicineEditLogs] = await Promise.all([
+        User.countDocuments({ isActive: true }),
+        StockTransaction.find({ type: 'ADJUSTMENT', 'changes.0': { $exists: true } })
+          .populate('medicineBatch', 'medicineName batchNumber product')
+          .sort({ createdAt: -1 })
+          .limit(10)
+          .lean()
+      ]);
+    }
 
     res.render('dashboard', {
       title: 'Dashboard',
@@ -85,6 +96,7 @@ exports.index = async (req, res, next) => {
       clinic,
       pharmacy,
       userCount,
+      medicineEditLogs,
       today,
       formatDateTime,
       formatCnic

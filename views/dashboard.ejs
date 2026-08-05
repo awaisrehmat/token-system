@@ -50,6 +50,32 @@
   </div>
 <% } %>
 
+<% if (showUsers) { %>
+  <div class="card app-card mb-4">
+    <div class="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div><h2 class="h5 mb-0"><i class="bi bi-journal-text me-2 text-primary"></i>Medicine Edit Logs</h2><small class="text-secondary">Admin-only record of manual stock and rate corrections</small></div>
+      <span class="badge text-bg-light border"><%= medicineEditLogs.length %> recent edit(s)</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light"><tr><th>Date</th><th>Medicine / Batch</th><th>Edited by</th><th>Reason</th><th>Changes</th></tr></thead>
+        <tbody>
+          <% if (!medicineEditLogs.length) { %><tr><td colspan="5" class="text-center text-secondary py-5">No medicine edits have been recorded yet.</td></tr><% } %>
+          <% medicineEditLogs.forEach((log) => { const batch = log.medicineBatch; %>
+            <tr>
+              <td class="text-nowrap"><%= formatDateTime(log.createdAt) %></td>
+              <td><% if (batch?.product) { %><a class="text-decoration-none fw-semibold" href="/inventory/products/<%= batch.product %>"><%= batch.medicineName %></a><% } else { %><strong><%= batch?.medicineName || 'Unavailable medicine' %></strong><% } %><div class="small text-secondary">Batch <%= batch?.batchNumber || 'unavailable' %></div></td>
+              <td><i class="bi bi-person me-1 text-secondary"></i><%= log.performedBy || 'Unknown user' %></td>
+              <td><%= log.remarks || 'No reason supplied' %></td>
+              <td><details><summary class="text-primary small">View <%= log.changes.length %> change(s)</summary><ul class="small mb-0 mt-2 ps-3"><% log.changes.forEach((change) => { %><li><strong><%= change.label %>:</strong> <%= change.before %> → <%= change.after %></li><% }) %></ul></details></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% } %>
+
 <div class="row g-4">
   <% if (showClinic && clinic) { %>
     <div class="<%= showPharmacy ? 'col-xl-6' : 'col-12' %>">
