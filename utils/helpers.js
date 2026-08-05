@@ -19,6 +19,23 @@ function formatDateTime(date) {
   }).format(new Date(date));
 }
 
+function formatClinicTime(date) {
+  return new Intl.DateTimeFormat('en-PK', {
+    timeZone: process.env.CLINIC_TIMEZONE || 'Asia/Karachi',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(new Date(date));
+}
+
+function formatClinicDisplayDate(date) {
+  return new Intl.DateTimeFormat('en-PK', {
+    timeZone: process.env.CLINIC_TIMEZONE || 'Asia/Karachi',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  }).format(new Date(date));
+}
+
 function normalizeCnic(value = '') {
   return String(value).replace(/\D/g, '');
 }
@@ -40,6 +57,8 @@ function formatToken(value) {
 module.exports = {
   getClinicDate,
   formatDateTime,
+  formatClinicTime,
+  formatClinicDisplayDate,
   normalizeCnic,
   formatCnic,
   escapeRegex,

@@ -8,6 +8,8 @@ const Sale = require('../models/Sale');
 const {
   getClinicDate,
   formatDateTime,
+  formatClinicTime,
+  formatClinicDisplayDate,
   normalizeCnic,
   formatCnic,
   escapeRegex,
@@ -120,7 +122,9 @@ exports.dashboard = async (req, res, next) => {
       todayTotal,
       recentPatients,
       formatCnic,
-      formatDateTime
+      formatDateTime,
+      formatClinicTime,
+      formatClinicDisplayDate
     });
   } catch (error) {
     next(error);
@@ -409,7 +413,9 @@ exports.token = async (req, res, next) => {
       patient,
       printSetting,
       formatCnic,
-      formatDateTime
+      formatDateTime,
+      formatClinicTime,
+      formatClinicDisplayDate
     });
   } catch (error) {
     return next(error);

@@ -268,9 +268,10 @@ dd {
   align-items: stretch;
 }
 .a4-patient-band .a4-wide {
-  grid-column: span 8;
+  grid-column: span 5;
 }
-.a4-patient-band > div:nth-child(7) { grid-column: span 4; }
+.a4-patient-band > div:nth-child(7) { grid-column: span 3; }
+.a4-patient-band > div:nth-child(8) { grid-column: span 4; }
 
 .a4-clinical-summary {
   display: grid;

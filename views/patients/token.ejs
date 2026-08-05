@@ -26,10 +26,11 @@
       <div><span>Patient Name</span><strong><%= patient.patientName %></strong></div>
       <div><span>Relation</span><strong><%= patient.relationType && patient.relativeName ? `${patient.relationType} ${patient.relativeName}` : '—' %></strong></div>
       <div><span>No. of Visit</span><strong><%= patient.patientType %></strong></div>
-      <div><span>Time</span><strong><%= patient.createdAt.toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' }) %></strong></div>
-      <div><span>Date</span><strong><%= patient.createdAt.toLocaleDateString('en-PK') %></strong></div>
+      <div><span>Time</span><strong><%= formatClinicTime(patient.createdAt) %></strong></div>
+      <div><span>Date</span><strong><%= formatClinicDisplayDate(patient.createdAt) %></strong></div>
       <div class="a4-wide"><span>Address</span><strong><%= patient.address %></strong></div>
       <div><span>Contact No.</span><strong><%= patient.contactNumber %></strong></div>
+      <div><span>CNIC</span><strong><%= formatCnic(patient.cnic) %></strong></div>
     </section>
     <section class="a4-work-area">
       <aside class="a4-notes-column">
