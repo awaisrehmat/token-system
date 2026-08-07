@@ -51,14 +51,24 @@ async function ensureProductCatalog() {
     groups.get(key).push(batch);
   }
 
+  if (!groups.size) return;
+
+  const existingProducts = await MedicineProduct.find({
+    normalizedName: { $in: [...groups.keys()] }
+  });
+  const existingByName = new Map(existingProducts.map((product) => [product.normalizedName, product]));
+  const missingProducts = [];
+
   for (const [normalizedName, productBatches] of groups) {
+    if (existingByName.has(normalizedName)) continue;
     const reference = productBatches[0];
     const conflict = new Set(productBatches.map(packagingSignature)).size > 1;
     const priceConflict = new Set(productBatches.map(pricingSignature)).size > 1;
-    let product = await MedicineProduct.findOne({ normalizedName });
-    if (!product) {
-      try {
-        product = await MedicineProduct.create({
+    missingProducts.push({
+      updateOne: {
+        filter: { normalizedName },
+        update: {
+          $setOnInsert: {
           name: reference.medicineName,
           normalizedName,
           packUnit: reference.packUnit || 'Pack',
@@ -67,31 +77,44 @@ async function ensureProductCatalog() {
           allowLooseSale: Boolean(reference.allowLooseSale),
           packagingStatus: conflict ? 'CONFLICT' : 'ACTIVE',
           pricingStatus: priceConflict ? 'CONFLICT' : 'ACTIVE'
-        });
-      } catch (error) {
-        if (error.code !== 11000) throw error;
-        product = await MedicineProduct.findOne({ normalizedName });
+          }
+        },
+        upsert: true
       }
-    } else {
-      let changed = false;
-      if (conflict && product.packagingStatus !== 'CONFLICT') {
-        product.packagingStatus = 'CONFLICT';
-        changed = true;
-      }
-      if (priceConflict && product.pricingStatus !== 'CONFLICT') {
-        product.pricingStatus = 'CONFLICT';
-        changed = true;
-      } else if (!priceConflict && !product.pricingStatus) {
-        product.pricingStatus = 'ACTIVE';
-        changed = true;
-      }
-      if (changed) await product.save();
-    }
-    await MedicineBatch.updateMany(
-      { _id: { $in: productBatches.map((batch) => batch._id) }, product: { $ne: product._id } },
-      { $set: { product: product._id } }
-    );
+    });
   }
+
+  if (missingProducts.length) {
+    await MedicineProduct.bulkWrite(missingProducts, { ordered: false });
+  }
+
+  const products = await MedicineProduct.find({ normalizedName: { $in: [...groups.keys()] } }).lean();
+  const productsByName = new Map(products.map((product) => [product.normalizedName, product]));
+  const productUpdates = [];
+  const batchUpdates = [];
+
+  for (const [normalizedName, productBatches] of groups) {
+    const product = productsByName.get(normalizedName);
+    if (!product) continue;
+    const conflict = new Set(productBatches.map(packagingSignature)).size > 1;
+    const priceConflict = new Set(productBatches.map(pricingSignature)).size > 1;
+    const status = {};
+    if (conflict && product.packagingStatus !== 'CONFLICT') status.packagingStatus = 'CONFLICT';
+    if (priceConflict && product.pricingStatus !== 'CONFLICT') status.pricingStatus = 'CONFLICT';
+    else if (!priceConflict && !product.pricingStatus) status.pricingStatus = 'ACTIVE';
+    if (Object.keys(status).length) {
+      productUpdates.push({ updateOne: { filter: { _id: product._id }, update: { $set: status } } });
+    }
+    batchUpdates.push({
+      updateMany: {
+        filter: { _id: { $in: productBatches.map((batch) => batch._id) }, product: { $ne: product._id } },
+        update: { $set: { product: product._id } }
+      }
+    });
+  }
+
+  if (productUpdates.length) await MedicineProduct.bulkWrite(productUpdates, { ordered: false });
+  if (batchUpdates.length) await MedicineBatch.bulkWrite(batchUpdates, { ordered: false });
 }
 
 exports.index = async (req, res, next) => {
@@ -505,7 +528,6 @@ exports.addStock = async (req, res, next) => {
 };
 
 async function availableMedicines() {
-  await ensureProductCatalog();
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
   const products = await MedicineProduct.find({ packagingStatus: 'ACTIVE', pricingStatus: { $ne: 'CONFLICT' } }).sort({ name: 1 }).lean();
@@ -541,7 +563,6 @@ async function availablePatients() {
 }
 
 async function pricingConflictProducts() {
-  await ensureProductCatalog();
   const products = await MedicineProduct.find({ pricingStatus: 'CONFLICT' }).sort({ name: 1 }).lean();
   const batches = await MedicineBatch.find({ product: { $in: products.map((product) => product._id) } })
     .sort({ expiryDate: 1, createdAt: 1 })
@@ -553,6 +574,7 @@ async function pricingConflictProducts() {
 }
 
 async function saleReferenceData() {
+  await ensureProductCatalog();
   const [medicines, patients, priceConflicts] = await Promise.all([availableMedicines(), availablePatients(), pricingConflictProducts()]);
   return { medicines, patients, priceConflicts };
 }
