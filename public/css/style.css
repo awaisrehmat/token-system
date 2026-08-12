@@ -274,7 +274,8 @@ main.container {
 }
 
 .mr-suggestion:hover,
-.mr-suggestion:focus {
+.mr-suggestion:focus,
+.mr-suggestion.is-keyboard-active {
   background: #eaf1ff;
   color: var(--app-primary);
   outline: 0;
@@ -839,7 +840,8 @@ main.container {
 }
 
 .medicine-suggestion:hover,
-.medicine-suggestion:focus {
+.medicine-suggestion:focus,
+.medicine-suggestion.is-keyboard-active {
   background: #eaf1ff;
   color: var(--app-primary);
   outline: 0;

@@ -85,10 +85,30 @@
   const saleItems = document.getElementById('saleItems');
   const clientSaleError = document.getElementById('clientSaleError');
   const medicineOptions = new Map([...document.querySelectorAll('#medicineSuggestions option')].map((option) => [option.value.trim().toLowerCase(), option]));
+  function clearActiveOption(menu) {
+    menu.querySelectorAll('.is-keyboard-active').forEach((option) => {
+      option.classList.remove('is-keyboard-active');
+      option.setAttribute('aria-selected', 'false');
+    });
+  }
+  function moveActiveOption(menu, selector, direction) {
+    const options = [...menu.querySelectorAll(selector)].filter((option) => !option.classList.contains('d-none'));
+    if (!options.length) return null;
+    const current = options.findIndex((option) => option.classList.contains('is-keyboard-active'));
+    const next = current < 0
+      ? (direction > 0 ? 0 : options.length - 1)
+      : (current + direction + options.length) % options.length;
+    clearActiveOption(menu);
+    options[next].classList.add('is-keyboard-active');
+    options[next].setAttribute('aria-selected', 'true');
+    options[next].scrollIntoView({ block: 'nearest' });
+    return options[next];
+  }
   function closeMedicineMenus(except = null) {
     document.querySelectorAll('.medicine-combobox').forEach((box) => {
       if (box === except) return;
-      box.querySelector('.medicine-suggestions').classList.add('d-none');
+      const menu = box.querySelector('.medicine-suggestions');
+      clearActiveOption(menu); menu.classList.add('d-none');
       box.querySelector('.medicine-search').setAttribute('aria-expanded', 'false');
     });
   }
@@ -100,7 +120,7 @@
     const matches = [...medicineOptions.values()].filter((option) => !query || option.value.toLowerCase().includes(query)).slice(0, 50);
     matches.forEach((option) => {
       const button = document.createElement('button');
-      button.type = 'button'; button.className = 'medicine-suggestion'; button.setAttribute('role', 'option');
+      button.type = 'button'; button.className = 'medicine-suggestion'; button.setAttribute('role', 'option'); button.setAttribute('aria-selected', 'false');
       const name = document.createElement('strong'); name.textContent = option.value;
       const detail = document.createElement('small'); detail.textContent = `${option.dataset.stock} ${option.dataset.looseUnit} available · Rs. ${Number(option.dataset.packPrice).toFixed(2)} / ${option.dataset.packUnit}`;
       button.append(name, detail);
@@ -112,17 +132,28 @@
   }
   const mrOptions = [...patientMrSuggestions.querySelectorAll('.mr-suggestion')];
   const showMrSuggestions = () => { patientMrSuggestions.classList.remove('d-none'); patientMrSearch.setAttribute('aria-expanded', 'true'); };
-  const hideMrSuggestions = () => { patientMrSuggestions.classList.add('d-none'); patientMrSearch.setAttribute('aria-expanded', 'false'); };
+  const hideMrSuggestions = () => { clearActiveOption(patientMrSuggestions); patientMrSuggestions.classList.add('d-none'); patientMrSearch.setAttribute('aria-expanded', 'false'); };
   function filterMrSuggestions() {
     const query = patientMr.value ? '' : patientMrSearch.value.trim().toLowerCase();
     let matches = 0;
     mrOptions.forEach((option) => { const visible = !query || option.dataset.search.includes(query); option.classList.toggle('d-none', !visible); if (visible) matches += 1; });
-    patientMrSuggestions.querySelector('.mr-no-results').classList.toggle('d-none', matches > 0);
+    clearActiveOption(patientMrSuggestions); patientMrSuggestions.querySelector('.mr-no-results').classList.toggle('d-none', matches > 0);
     showMrSuggestions();
   }
   patientMrSearch.addEventListener('focus', filterMrSuggestions);
   patientMrSearch.addEventListener('input', () => { patientMr.value = ''; customerName.value = 'Walk-in customer'; filterMrSuggestions(); });
-  patientMrSearch.addEventListener('keydown', (event) => { if (event.key === 'Escape') hideMrSuggestions(); if (event.key === 'Enter') { const first = mrOptions.find((option) => !option.classList.contains('d-none')); if (first) { event.preventDefault(); first.click(); } } });
+  patientMrSearch.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (patientMrSuggestions.classList.contains('d-none')) filterMrSuggestions();
+      moveActiveOption(patientMrSuggestions, '.mr-suggestion', event.key === 'ArrowDown' ? 1 : -1);
+    } else if (event.key === 'Escape') {
+      hideMrSuggestions();
+    } else if (event.key === 'Enter') {
+      const selected = patientMrSuggestions.querySelector('.mr-suggestion.is-keyboard-active') || mrOptions.find((option) => !option.classList.contains('d-none'));
+      if (selected) { event.preventDefault(); selected.click(); }
+    }
+  });
   mrOptions.forEach((option) => option.addEventListener('click', () => { patientMr.value = option.dataset.mr; customerName.value = option.dataset.patientName || 'Walk-in customer'; patientMrSearch.value = option.dataset.mr ? `${option.dataset.mr} — ${option.dataset.patientName}` : ''; hideMrSuggestions(); }));
   document.addEventListener('click', (event) => { if (!event.target.closest('.mr-combobox')) hideMrSuggestions(); });
   function errorFor(field, feedback, message) { field.classList.toggle('is-invalid', Boolean(message)); field.setCustomValidity(message); feedback.textContent = message; }
@@ -152,7 +183,20 @@
   saleItems.addEventListener('input', refreshSheet); saleItems.addEventListener('change', refreshSheet);
   saleItems.addEventListener('focusin', (event) => { if (event.target.matches('.medicine-search')) showMedicineMenu(event.target.closest('.medicine-combobox')); });
   saleItems.addEventListener('input', (event) => { if (event.target.matches('.medicine-search')) { event.target.closest('.medicine-combobox').querySelector('.medicine-select').value = ''; showMedicineMenu(event.target.closest('.medicine-combobox')); refreshSheet(); } });
-  saleItems.addEventListener('keydown', (event) => { if (!event.target.matches('.medicine-search')) return; const menu = event.target.closest('.medicine-combobox').querySelector('.medicine-suggestions'); if (event.key === 'Escape') closeMedicineMenus(); if (event.key === 'Enter') { const first = menu.querySelector('.medicine-suggestion'); if (first) { event.preventDefault(); first.click(); } } });
+  saleItems.addEventListener('keydown', (event) => {
+    if (!event.target.matches('.medicine-search')) return;
+    const box = event.target.closest('.medicine-combobox'); const menu = box.querySelector('.medicine-suggestions');
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (menu.classList.contains('d-none')) showMedicineMenu(box);
+      moveActiveOption(menu, '.medicine-suggestion', event.key === 'ArrowDown' ? 1 : -1);
+    } else if (event.key === 'Escape') {
+      closeMedicineMenus();
+    } else if (event.key === 'Enter') {
+      const selected = menu.querySelector('.medicine-suggestion.is-keyboard-active') || menu.querySelector('.medicine-suggestion');
+      if (selected) { event.preventDefault(); selected.click(); }
+    }
+  });
   document.addEventListener('click', (event) => { if (!event.target.closest('.medicine-combobox')) closeMedicineMenus(); });
   document.getElementById('addSaleItem').addEventListener('click', () => { saleItems.appendChild(document.getElementById('saleRowTemplate').content.cloneNode(true)); refreshSheet(); saleItems.querySelector('.sale-item-row:last-child .medicine-search').focus(); });
   saleForm.addEventListener('submit', (event) => { const hasMedicine = [...saleItems.querySelectorAll('.medicine-select')].some((field) => field.value); if (!hasMedicine || refreshSheet()) { event.preventDefault(); clientSaleError.classList.remove('d-none'); saleForm.querySelector('.is-invalid')?.focus(); } else clientSaleError.classList.add('d-none'); });
