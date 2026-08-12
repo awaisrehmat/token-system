@@ -36,12 +36,9 @@
           <tr>
             <td>
               <strong><%= item.medicineName %></strong>
-              <small>
-                <% item.allocations.forEach((allocation, index) => { %><%= index ? ', ' : '' %>Batch <%= allocation.batchNumber %><% }) %>
-              </small>
               <% if (item.discountPercent > 0) { %><small>Discount: <%= item.discountPercent %>%</small><% } %>
             </td>
-            <td class="number"><% if (item.baseQuantity) { %><%= item.packQuantity %> <%= item.packUnit %><% if (item.looseQuantity) { %><br><%= item.looseQuantity %> <%= item.looseUnit %><% } %><% } else { %><%= item.quantity %><% } %></td>
+            <td class="number"><% if (item.baseQuantity) { %><% if (item.packQuantity > 0) { %><%= item.packQuantity %> <%= item.packUnit %><% } %><% if (item.looseQuantity > 0) { %><% if (item.packQuantity > 0) { %><br><% } %><%= item.looseQuantity %> <%= item.looseUnit %><% } %><% } else { %><%= item.quantity %> <%= item.unitLabel || 'Unit' %><% } %></td>
             <td class="number"><%= item.total.toFixed(2) %></td>
           </tr>
         <% }) %>
