@@ -18,7 +18,7 @@
   <% if (printSetting.tokenPaperSize === 'A4') { %>
   <article class="a4-prescription">
     <header class="a4-clinic-header">
-      <div class="a4-clinic-identity"><h1><%= printSetting.header %></h1><% String(printSetting.a4ClinicDetails || '').split('\n').filter(Boolean).forEach((line) => { %><p><%= line %></p><% }) %></div>
+      <div class="a4-clinic-identity"><h1 class="a4-token-header"><%= printSetting.header %></h1><% String(printSetting.a4ClinicDetails || '').split('\n').filter(Boolean).forEach((line) => { %><p><%= line %></p><% }) %></div>
       <div class="a4-doctor"><strong><%= patient.consultant ? patient.consultant.name : 'Consulting Physician' %></strong><span><%= patient.consultant?.specialization || 'Medical Consultant' %></span></div>
     </header>
     <div class="a4-reference-row"><strong class="a4-token"><span>Token</span> <%= patient.tokenNumber %></strong><strong>MR # <%= patient.mrNumber %></strong></div>
@@ -60,7 +60,7 @@
   <% } else { %>
   <article class="token-receipt">
     <header>
-      <h1><%= printSetting.header %></h1>
+      <h1 class="token-receipt-header"><%= printSetting.header %></h1>
       <p>Patient Token</p>
     </header>
     <div class="divider"></div>

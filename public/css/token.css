@@ -271,6 +271,11 @@ dd {
   grid-column: span 4;
 }
 
+.token-receipt-header,
+.a4-token-header {
+  white-space: pre-line;
+}
+
 .a4-patient-band > div {
   flex-direction: column;
   align-items: stretch;

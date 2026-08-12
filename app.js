@@ -76,7 +76,7 @@ app.use(async (req, res, next) => {
 app.use(async (req, res, next) => {
   try {
     const printSetting = await PrintSetting.findOne({ key: 'default' }).select('header').lean();
-    if (printSetting?.header) res.locals.clinicName = printSetting.header;
+    if (printSetting?.header) res.locals.clinicName = printSetting.header.split(/\r?\n/)[0].trim() || 'My Clinic';
     next();
   } catch (error) {
     next(error);

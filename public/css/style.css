@@ -459,6 +459,10 @@ main.container {
   white-space: pre-line;
 }
 
+.token-receipt-preview-header {
+  white-space: pre-line;
+}
+
 .receipt-preview > p {
   margin: 0.2rem 0;
   color: #000;

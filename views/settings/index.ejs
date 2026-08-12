@@ -20,8 +20,8 @@
       <div class="card-body p-4">
         <div class="mb-4">
           <label for="printHeader" class="form-label">Token header</label>
-          <input type="text" class="form-control" id="printHeader" name="header" maxlength="120" value="<%= printSetting.header %>" required>
-          <div class="form-text">Used as the clinic name throughout the application and at the top of printed receipts.</div>
+          <textarea class="form-control" id="printHeader" name="header" maxlength="250" rows="4" required><%= printSetting.header %></textarea>
+          <div class="form-text">Enter each token-header line on a separate line. The first line is used as the clinic name in the application.</div>
         </div>
         <div>
           <label for="printFooter" class="form-label">Token footer</label>
@@ -51,7 +51,7 @@
       <div class="card-header bg-white py-3"><h2 class="h5 mb-0">Preview</h2></div>
       <div class="card-body p-4">
         <div class="receipt-preview">
-          <h3><%= printSetting.header %></h3>
+          <h3 class="token-receipt-preview-header"><%= printSetting.header %></h3>
           <p>Patient Token · <%= printSetting.tokenPaperSize === 'A4' ? 'A4' : '80mm' %></p>
           <div class="receipt-preview-line"></div>
           <div class="receipt-preview-row"><span>Invoice</span><strong>INV-260730-001</strong></div>

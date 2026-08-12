@@ -37,7 +37,7 @@ exports.updateReceipt = async (req, res, next) => {
   };
   const errors = [];
   if (!printSetting.header) errors.push('Receipt header is required.');
-  if (printSetting.header.length > 120) errors.push('Receipt header cannot exceed 120 characters.');
+  if (printSetting.header.length > 250) errors.push('Receipt header cannot exceed 250 characters.');
   if (!printSetting.footer) errors.push('Receipt footer is required.');
   if (printSetting.footer.length > 250) errors.push('Receipt footer cannot exceed 250 characters.');
 
