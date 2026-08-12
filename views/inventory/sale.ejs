@@ -49,12 +49,7 @@
             <tr class="sale-item-row">
               <td class="sale-row-number"><%= index + 1 %></td>
               <td>
-                <select class="form-select medicine-select" name="items[<%= index %>][medicineName]">
-                  <option value="">Select medicine</option>
-                  <% medicines.forEach((medicine) => { %>
-                    <option value="<%= medicine._id %>" data-stock="<%= medicine.availableQuantity %>" data-pack-price="<%= medicine.retailPrice %>" data-loose-price="<%= medicine.looseRetailPrice || medicine.retailPrice / (medicine.unitsPerPack || 1) %>" data-pack-unit="<%= medicine.packUnit || 'Pack' %>" data-loose-unit="<%= medicine.looseUnit || 'Unit' %>" data-units="<%= medicine.unitsPerPack || 1 %>" data-loose-allowed="<%= medicine.allowLooseSale ? 'true' : 'false' %>" <%= item.medicineName === medicine._id ? 'selected' : '' %>><%= medicine._id %></option>
-                  <% }) %>
-                </select>
+                <div class="medicine-combobox"><input type="hidden" class="medicine-select" name="items[<%= index %>][medicineName]" value="<%= item.medicineName || '' %>"><input type="search" class="form-control medicine-search" value="<%= item.medicineName || '' %>" placeholder="Select medicine" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false"><div class="medicine-suggestions d-none" role="listbox"></div></div>
                 <div class="invalid-feedback medicine-error"></div>
               </td>
               <td class="sale-stock-cell"><span>—</span><small></small></td>
@@ -72,8 +67,12 @@
   </div>
 </form>
 
+<datalist id="medicineSuggestions">
+  <% medicines.forEach((medicine) => { %><option value="<%= medicine._id %>" data-stock="<%= medicine.availableQuantity %>" data-pack-price="<%= medicine.retailPrice %>" data-loose-price="<%= medicine.looseRetailPrice || medicine.retailPrice / (medicine.unitsPerPack || 1) %>" data-pack-unit="<%= medicine.packUnit || 'Pack' %>" data-loose-unit="<%= medicine.looseUnit || 'Unit' %>" data-units="<%= medicine.unitsPerPack || 1 %>" data-loose-allowed="<%= medicine.allowLooseSale ? 'true' : 'false' %>"></option><% }) %>
+</datalist>
+
 <template id="saleRowTemplate">
-  <tr class="sale-item-row"><td class="sale-row-number"></td><td><select class="form-select medicine-select"><option value="">Select medicine</option><% medicines.forEach((medicine) => { %><option value="<%= medicine._id %>" data-stock="<%= medicine.availableQuantity %>" data-pack-price="<%= medicine.retailPrice %>" data-loose-price="<%= medicine.looseRetailPrice || medicine.retailPrice / (medicine.unitsPerPack || 1) %>" data-pack-unit="<%= medicine.packUnit || 'Pack' %>" data-loose-unit="<%= medicine.looseUnit || 'Unit' %>" data-units="<%= medicine.unitsPerPack || 1 %>" data-loose-allowed="<%= medicine.allowLooseSale ? 'true' : 'false' %>"><%= medicine._id %></option><% }) %></select><div class="invalid-feedback medicine-error"></div></td><td class="sale-stock-cell"><span>—</span><small></small></td><td><div class="sale-unit-input"><input class="form-control pack-quantity-input" type="number" min="0" step="1" placeholder="0"><small class="pack-label">Pack</small></div><div class="invalid-feedback pack-error"></div></td><td><div class="sale-unit-input"><input class="form-control loose-quantity-input" type="number" min="0" step="1" placeholder="0"><small class="loose-label">Unit</small></div><div class="invalid-feedback loose-error"></div></td><td><input class="form-control discount-input" type="number" min="0" max="100" step="0.01" placeholder="0"><div class="invalid-feedback discount-error"></div></td><td class="sale-line-total text-end">Rs. 0.00</td></tr>
+  <tr class="sale-item-row"><td class="sale-row-number"></td><td><div class="medicine-combobox"><input type="hidden" class="medicine-select"><input type="search" class="form-control medicine-search" placeholder="Select medicine" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false"><div class="medicine-suggestions d-none" role="listbox"></div></div><div class="invalid-feedback medicine-error"></div></td><td class="sale-stock-cell"><span>—</span><small></small></td><td><div class="sale-unit-input"><input class="form-control pack-quantity-input" type="number" min="0" step="1" placeholder="0"><small class="pack-label">Pack</small></div><div class="invalid-feedback pack-error"></div></td><td><div class="sale-unit-input"><input class="form-control loose-quantity-input" type="number" min="0" step="1" placeholder="0"><small class="loose-label">Unit</small></div><div class="invalid-feedback loose-error"></div></td><td><input class="form-control discount-input" type="number" min="0" max="100" step="0.01" placeholder="0"><div class="invalid-feedback discount-error"></div></td><td class="sale-line-total text-end">Rs. 0.00</td></tr>
 </template>
 
 <script>
@@ -84,6 +83,32 @@
   const customerName = document.getElementById('customerName');
   const saleItems = document.getElementById('saleItems');
   const clientSaleError = document.getElementById('clientSaleError');
+  const medicineOptions = new Map([...document.querySelectorAll('#medicineSuggestions option')].map((option) => [option.value.trim().toLowerCase(), option]));
+  function closeMedicineMenus(except = null) {
+    document.querySelectorAll('.medicine-combobox').forEach((box) => {
+      if (box === except) return;
+      box.querySelector('.medicine-suggestions').classList.add('d-none');
+      box.querySelector('.medicine-search').setAttribute('aria-expanded', 'false');
+    });
+  }
+  function showMedicineMenu(box) {
+    const search = box.querySelector('.medicine-search');
+    const menu = box.querySelector('.medicine-suggestions');
+    const query = search.value.trim().toLowerCase();
+    menu.replaceChildren();
+    const matches = [...medicineOptions.values()].filter((option) => !query || option.value.toLowerCase().includes(query)).slice(0, 50);
+    matches.forEach((option) => {
+      const button = document.createElement('button');
+      button.type = 'button'; button.className = 'medicine-suggestion'; button.setAttribute('role', 'option');
+      const name = document.createElement('strong'); name.textContent = option.value;
+      const detail = document.createElement('small'); detail.textContent = `${option.dataset.stock} ${option.dataset.looseUnit} available · Rs. ${Number(option.dataset.packPrice).toFixed(2)} / ${option.dataset.packUnit}`;
+      button.append(name, detail);
+      button.addEventListener('click', () => { box.querySelector('.medicine-select').value = option.value; search.value = option.value; menu.classList.add('d-none'); search.setAttribute('aria-expanded', 'false'); refreshSheet(); });
+      menu.appendChild(button);
+    });
+    if (!matches.length) { const empty = document.createElement('div'); empty.className = 'medicine-no-results'; empty.textContent = 'No matching medicine found'; menu.appendChild(empty); }
+    closeMedicineMenus(box); menu.classList.remove('d-none'); search.setAttribute('aria-expanded', 'true');
+  }
   const mrOptions = [...patientMrSuggestions.querySelectorAll('.mr-suggestion')];
   const showMrSuggestions = () => { patientMrSuggestions.classList.remove('d-none'); patientMrSearch.setAttribute('aria-expanded', 'true'); };
   const hideMrSuggestions = () => { patientMrSuggestions.classList.add('d-none'); patientMrSearch.setAttribute('aria-expanded', 'false'); };
@@ -105,27 +130,30 @@
     const selected = rows.map((row) => row.querySelector('.medicine-select').value).filter(Boolean);
     let grand = 0; let invalid = false;
     rows.forEach((row, index) => {
-      const medicine = row.querySelector('.medicine-select'); const option = medicine.selectedOptions[0];
+      const medicine = row.querySelector('.medicine-select'); const medicineSearch = row.querySelector('.medicine-search'); const option = medicineOptions.get(medicine.value.trim().toLowerCase());
       const packInput = row.querySelector('.pack-quantity-input'); const looseInput = row.querySelector('.loose-quantity-input'); const discountInput = row.querySelector('.discount-input');
       medicine.name = `items[${index}][medicineName]`; packInput.name = `items[${index}][packQuantity]`; looseInput.name = `items[${index}][looseQuantity]`; discountInput.name = `items[${index}][discountPercent]`; row.querySelector('.sale-row-number').textContent = index + 1;
-      const packs = Number(packInput.value || 0); const loose = Number(looseInput.value || 0); const discount = Number(discountInput.value || 0); const units = Number(option?.dataset.units || 1); const stock = Number(option?.dataset.stock || 0); const packPrice = Number(option?.dataset.packPrice || 0); const loosePrice = Number(option?.dataset.loosePrice || 0); const looseAllowed = option?.dataset.looseAllowed === 'true'; const started = Boolean(medicine.value || packInput.value || looseInput.value || discountInput.value);
+      const packs = Number(packInput.value || 0); const loose = Number(looseInput.value || 0); const discount = Number(discountInput.value || 0); const units = Number(option?.dataset.units || 1); const stock = Number(option?.dataset.stock || 0); const packPrice = Number(option?.dataset.packPrice || 0); const loosePrice = Number(option?.dataset.loosePrice || 0); const looseAllowed = option?.dataset.looseAllowed === 'true'; const started = Boolean(medicineSearch.value || packInput.value || looseInput.value || discountInput.value);
       let medicineError = ''; let packError = ''; let looseError = ''; let discountError = '';
-      if (medicine.value && selected.filter((value) => value === medicine.value).length > 1) medicineError = 'Medicine already selected.'; else if (started && !medicine.value) medicineError = 'Select a medicine.';
+      if (medicine.value && !option) medicineError = 'Choose a medicine from the list.'; else if (medicine.value && selected.filter((value) => value.toLowerCase() === medicine.value.toLowerCase()).length > 1) medicineError = 'Medicine already selected.'; else if (started && !medicine.value) medicineError = 'Select a medicine.';
       if ((packInput.value && (!Number.isInteger(packs) || packs < 0))) packError = 'Use a whole number.';
       if ((looseInput.value && (!Number.isInteger(loose) || loose < 0))) looseError = 'Use a whole number.'; else if (loose > 0 && !looseAllowed) looseError = 'Loose sale is disabled.';
       if (medicine.value && packs * units + loose > stock) looseError = `Only ${stock} base units available.`;
       if (started && packs + loose <= 0) packError = 'Enter pack or loose quantity.';
       if (discountInput.value && (discount < 0 || discount > 100)) discountError = 'Use 0 to 100.';
-      errorFor(medicine, row.querySelector('.medicine-error'), medicineError); errorFor(packInput, row.querySelector('.pack-error'), packError); errorFor(looseInput, row.querySelector('.loose-error'), looseError); errorFor(discountInput, row.querySelector('.discount-error'), discountError);
-      looseInput.disabled = Boolean(medicine.value && !looseAllowed); row.querySelector('.pack-label').textContent = option?.dataset.packUnit || 'Pack'; row.querySelector('.loose-label').textContent = option?.dataset.looseUnit || 'Unit';
-      const stockCell = row.querySelector('.sale-stock-cell'); if (medicine.value) { const fullPacks = Math.floor(stock / units); const remainder = stock % units; stockCell.querySelector('span').textContent = `${fullPacks} ${option.dataset.packUnit}`; stockCell.querySelector('small').textContent = `+ ${remainder} ${option.dataset.looseUnit}`; } else { stockCell.querySelector('span').textContent = '—'; stockCell.querySelector('small').textContent = ''; }
+      errorFor(medicineSearch, row.querySelector('.medicine-error'), medicineError); errorFor(packInput, row.querySelector('.pack-error'), packError); errorFor(looseInput, row.querySelector('.loose-error'), looseError); errorFor(discountInput, row.querySelector('.discount-error'), discountError);
+      looseInput.disabled = Boolean(option && !looseAllowed); row.querySelector('.pack-label').textContent = option?.dataset.packUnit || 'Pack'; row.querySelector('.loose-label').textContent = option?.dataset.looseUnit || 'Unit';
+      const stockCell = row.querySelector('.sale-stock-cell'); if (option) { const fullPacks = Math.floor(stock / units); const remainder = stock % units; stockCell.querySelector('span').textContent = `${fullPacks} ${option.dataset.packUnit}`; stockCell.querySelector('small').textContent = `+ ${remainder} ${option.dataset.looseUnit}`; } else { stockCell.querySelector('span').textContent = '—'; stockCell.querySelector('small').textContent = ''; }
       const total = Math.max(0, (packs * packPrice + loose * loosePrice) * (1 - discount / 100)); row.querySelector('.sale-line-total').textContent = `Rs. ${total.toFixed(2)}`; row.classList.toggle('sale-row-active', Boolean(medicine.value)); grand += total; invalid ||= Boolean(medicineError || packError || looseError || discountError);
     });
-    rows.forEach((row) => { const own = row.querySelector('.medicine-select').value; row.querySelectorAll('.medicine-select option').forEach((option) => { if (option.value) option.disabled = option.value !== own && selected.includes(option.value); }); });
     document.getElementById('grandTotal').textContent = `Rs. ${grand.toFixed(2)}`; return invalid;
   }
   saleItems.addEventListener('input', refreshSheet); saleItems.addEventListener('change', refreshSheet);
-  document.getElementById('addSaleItem').addEventListener('click', () => { saleItems.appendChild(document.getElementById('saleRowTemplate').content.cloneNode(true)); refreshSheet(); saleItems.querySelector('.sale-item-row:last-child .medicine-select').focus(); });
+  saleItems.addEventListener('focusin', (event) => { if (event.target.matches('.medicine-search')) showMedicineMenu(event.target.closest('.medicine-combobox')); });
+  saleItems.addEventListener('input', (event) => { if (event.target.matches('.medicine-search')) { event.target.closest('.medicine-combobox').querySelector('.medicine-select').value = ''; showMedicineMenu(event.target.closest('.medicine-combobox')); refreshSheet(); } });
+  saleItems.addEventListener('keydown', (event) => { if (!event.target.matches('.medicine-search')) return; const menu = event.target.closest('.medicine-combobox').querySelector('.medicine-suggestions'); if (event.key === 'Escape') closeMedicineMenus(); if (event.key === 'Enter') { const first = menu.querySelector('.medicine-suggestion'); if (first) { event.preventDefault(); first.click(); } } });
+  document.addEventListener('click', (event) => { if (!event.target.closest('.medicine-combobox')) closeMedicineMenus(); });
+  document.getElementById('addSaleItem').addEventListener('click', () => { saleItems.appendChild(document.getElementById('saleRowTemplate').content.cloneNode(true)); refreshSheet(); saleItems.querySelector('.sale-item-row:last-child .medicine-search').focus(); });
   saleForm.addEventListener('submit', (event) => { const hasMedicine = [...saleItems.querySelectorAll('.medicine-select')].some((field) => field.value); if (!hasMedicine || refreshSheet()) { event.preventDefault(); clientSaleError.classList.remove('d-none'); saleForm.querySelector('.is-invalid')?.focus(); } else clientSaleError.classList.add('d-none'); });
   refreshSheet();
 </script>
