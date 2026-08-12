@@ -23,6 +23,7 @@
   </div>
   <div class="card-body p-4">
     <form action="<%= isEdit ? `/patients/${patient._id}/update` : '/patients' %>" method="post" class="row g-3" novalidate>
+      <% if (!isEdit) { %><input type="hidden" name="registrationKey" value="<%= patient.registrationKey || '' %>"><% } %>
       <% if (isEdit) { %>
         <div class="col-12">
           <label class="form-label">Medical Record Number</label>

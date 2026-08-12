@@ -2,6 +2,9 @@ const mongoose = require('mongoose');
 
 const patientSchema = new mongoose.Schema(
   {
+    registrationKey: { type: String, trim: true },
+    registrationFingerprint: { type: String, trim: true },
+    registrationDedupKey: { type: String, trim: true },
     mrNumber: {
       type: String,
       required: true,
@@ -33,6 +36,9 @@ const patientSchema = new mongoose.Schema(
 );
 
 patientSchema.index({ tokenDate: 1, consultant: 1, tokenNumber: 1 }, { unique: true });
+patientSchema.index({ registrationKey: 1 }, { unique: true, sparse: true });
+patientSchema.index({ registrationDedupKey: 1 }, { unique: true, sparse: true });
+patientSchema.index({ registrationFingerprint: 1, createdAt: -1 });
 patientSchema.index({ tokenDate: 1, createdAt: -1 });
 patientSchema.index({ mrNumber: 1, createdAt: -1 });
 

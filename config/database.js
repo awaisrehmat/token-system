@@ -71,9 +71,50 @@ async function ensurePhysicianTokenIndex() {
     }
   }
 
+  await ensureRegistrationKeyIndex(Patient);
+
   await MedicalRecordCounter.createIndexes();
   await backfillMedicalRecordNumbers(Patient, MedicalRecordCounter);
   await Promise.all([Patient.createIndexes(), DailyCounter.createIndexes()]);
+}
+
+async function ensureRegistrationKeyIndex(Patient) {
+  const indexName = 'registrationKey_1';
+
+  // An earlier schema briefly created this index as sparse but non-unique.
+  // Reconcile that exact stale definition before Mongoose creates indexes.
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    let indexes = [];
+    try {
+      indexes = await Patient.collection.indexes();
+    } catch (error) {
+      if (error.codeName !== 'NamespaceNotFound' && error.code !== 26) throw error;
+    }
+    const existing = indexes.find((index) => index.name === indexName);
+    if (existing?.unique && existing.sparse) return;
+
+    if (existing) {
+      try {
+        await Patient.collection.dropIndex(indexName);
+      } catch (error) {
+        // Another application instance may be running the same migration.
+        if (error.codeName !== 'IndexNotFound' && error.code !== 27) throw error;
+      }
+    }
+
+    try {
+      await Patient.collection.createIndex(
+        { registrationKey: 1 },
+        { name: indexName, unique: true, sparse: true }
+      );
+      return;
+    } catch (error) {
+      // Re-read the index when another instance changed it concurrently.
+      if (![85, 86].includes(error.code)) throw error;
+    }
+  }
+
+  throw new Error('The patient registration-key index could not be reconciled.');
 }
 
 async function incrementMrCounter(MedicalRecordCounter, year) {

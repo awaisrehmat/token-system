@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 const Patient = require('../models/Patient');
 const Consultant = require('../models/Consultant');
 const DailyCounter = require('../models/DailyCounter');
@@ -17,6 +18,7 @@ const {
 } = require('../utils/helpers');
 
 const PAGE_SIZE = 10;
+const REGISTRATION_DEDUPLICATION_WINDOW_MS = 5 * 60 * 1000;
 
 async function nextMrNumber(year) {
   let counter;
@@ -53,6 +55,29 @@ function patientValues(body = {}) {
     description: String(body.description || '').trim(),
     tokenDate: body.tokenDate
   };
+}
+
+function patientRegistrationFingerprint(data) {
+  const normalized = [
+    data.patientName,
+    data.relationType,
+    data.relativeName,
+    data.age,
+    data.ageMonths,
+    data.sex,
+    data.cnic,
+    data.contactNumber,
+    data.address,
+    data.consultant,
+    data.patientType,
+    data.description,
+    data.tokenDate
+  ].map((value) => String(value ?? '').trim().toLowerCase()).join('|');
+  return crypto.createHash('sha256').update(normalized).digest('hex');
+}
+
+function registeredPatientRedirect(res, patient) {
+  return res.redirect(`/patients/${patient._id}/token?message=${encodeURIComponent('Patient was already registered. The existing token is shown below.')}`);
 }
 
 function validatePatient(data) {
@@ -264,7 +289,7 @@ exports.newForm = async (req, res, next) => {
 
     res.render('patients/form', {
       title: 'Register Patient',
-      patient: { tokenDate },
+      patient: { tokenDate, registrationKey: crypto.randomUUID() },
       consultants,
       errors: [],
       isEdit: false
@@ -276,8 +301,26 @@ exports.newForm = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
   const data = patientValues(req.body);
+  const registrationKey = String(req.body.registrationKey || '').trim();
+  data.registrationFingerprint = patientRegistrationFingerprint(data);
+  data.registrationDedupKey = `${Math.floor(Date.now() / REGISTRATION_DEDUPLICATION_WINDOW_MS)}:${data.registrationFingerprint}`;
+  data.registrationKey = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(registrationKey)
+    ? registrationKey
+    : `fallback:${data.registrationDedupKey}`;
 
   try {
+    const existingRegistration = await Patient.findOne({
+      $or: [
+        { registrationKey: data.registrationKey },
+        {
+          registrationFingerprint: data.registrationFingerprint,
+          createdAt: { $gte: new Date(Date.now() - REGISTRATION_DEDUPLICATION_WINDOW_MS) }
+        }
+      ]
+    }).sort({ createdAt: -1 }).select('_id').lean();
+    if (existingRegistration) {
+      return registeredPatientRedirect(res, existingRegistration);
+    }
     const errors = validatePatient(data);
     const consultantExists = mongoose.isValidObjectId(data.consultant)
       ? await Consultant.exists({ _id: data.consultant })
@@ -302,6 +345,18 @@ exports.create = async (req, res, next) => {
     return res.redirect(`/patients/${patient._id}/token?message=${encodeURIComponent('Patient registered successfully.')}`);
   } catch (error) {
     if (error.code === 11000) {
+      if (error.keyPattern?.registrationKey || error.keyValue?.registrationKey ||
+          error.keyPattern?.registrationDedupKey || error.keyValue?.registrationDedupKey) {
+        const existingRegistration = await Patient.findOne({
+          $or: [
+            { registrationKey: data.registrationKey },
+            { registrationDedupKey: data.registrationDedupKey }
+          ]
+        }).select('_id').lean();
+        if (existingRegistration) {
+          return registeredPatientRedirect(res, existingRegistration);
+        }
+      }
       const consultants = await Consultant.find().sort({ name: 1 }).lean();
       const conflictMessage = error.keyPattern?.mrNumber
         ? 'An MR-number conflict occurred. Please submit the form again.'
