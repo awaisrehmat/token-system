@@ -9,7 +9,7 @@ const printSettingSchema = new mongoose.Schema(
     a4ClinicDetails: { type: String, trim: true, maxlength: 400, default: '' },
     a4FooterLeft: { type: String, trim: true, maxlength: 150, default: '' },
     a4FooterRight: { type: String, trim: true, maxlength: 150, default: '' },
-    saleHeader: { type: String, required: true, trim: true, maxlength: 120, default: 'My Clinic' },
+    saleHeader: { type: String, required: true, trim: true, maxlength: 250, default: 'My Clinic' },
     saleFooter: { type: String, required: true, trim: true, maxlength: 250, default: 'Thank you for your purchase.' }
   },
   { timestamps: true }

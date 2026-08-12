@@ -67,7 +67,7 @@ exports.updateSaleReceipt = async (req, res, next) => {
   const saleFooter = String(req.body.saleFooter || '').trim();
   const errors = [];
   if (!saleHeader) errors.push('Sale receipt header is required.');
-  if (saleHeader.length > 120) errors.push('Sale receipt header cannot exceed 120 characters.');
+  if (saleHeader.length > 250) errors.push('Sale receipt header cannot exceed 250 characters.');
   if (!saleFooter) errors.push('Sale receipt footer is required.');
   if (saleFooter.length > 250) errors.push('Sale receipt footer cannot exceed 250 characters.');
 

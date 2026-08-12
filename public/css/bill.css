@@ -6,6 +6,7 @@ body { margin: 0; background: #f3f4f6; color: #000; font-family: Arial, sans-ser
 .sale-bill { width: 80mm; margin: 0 auto 20px; background: #fff; font-size: 11px; padding: 3mm 4mm; }
 .bill-header { text-align: center; }
 .bill-header h1 { margin: 0; font-size: 22px; font-weight: 900; line-height: 1.1; }
+.sale-receipt-header { white-space: pre-line; }
 .bill-header p { margin: 3px 0 0; font-size: 12px; font-weight: 800; text-transform: uppercase; }
 .bill-divider { border-top: 1px dashed #000; margin: 6px 0; }
 .bill-meta, .bill-totals { margin: 0; }

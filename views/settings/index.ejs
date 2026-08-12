@@ -71,8 +71,8 @@
       <div class="card-body p-4">
         <div class="mb-4">
           <label for="saleHeader" class="form-label">Sale receipt header</label>
-          <input type="text" class="form-control" id="saleHeader" name="saleHeader" maxlength="120" value="<%= printSetting.saleHeader || printSetting.header || 'My Clinic' %>" required>
-          <div class="form-text">Displayed at the top of printed medicine-sale bills.</div>
+          <textarea class="form-control" id="saleHeader" name="saleHeader" maxlength="250" rows="4" required><%= printSetting.saleHeader || printSetting.header || 'My Clinic' %></textarea>
+          <div class="form-text">Displayed at the top of printed medicine-sale bills. Enter each header line on a separate line.</div>
         </div>
         <div>
           <label for="saleFooter" class="form-label">Sale receipt footer</label>
@@ -86,7 +86,7 @@
   <div class="col-lg-5">
     <div class="card app-card receipt-preview-card">
       <div class="card-header bg-white py-3"><h2 class="h5 mb-0">Sale Receipt Preview</h2></div>
-      <div class="card-body p-4"><div class="receipt-preview"><h3><%= printSetting.saleHeader || printSetting.header || 'My Clinic' %></h3><p>Medicine Sale Receipt</p><div class="receipt-preview-line"></div><div class="receipt-preview-row"><span>Invoice</span><strong>INV-260801-001</strong></div><div class="receipt-preview-row"><span>Total</span><strong>Rs. 950.00</strong></div><div class="receipt-preview-line"></div><small><%= printSetting.saleFooter || 'Thank you for your purchase.' %></small></div></div>
+      <div class="card-body p-4"><div class="receipt-preview"><h3 class="sale-receipt-preview-header"><%= printSetting.saleHeader || printSetting.header || 'My Clinic' %></h3><p>Medicine Sale Receipt</p><div class="receipt-preview-line"></div><div class="receipt-preview-row"><span>Invoice</span><strong>INV-260801-001</strong></div><div class="receipt-preview-row"><span>Total</span><strong>Rs. 950.00</strong></div><div class="receipt-preview-line"></div><small><%= printSetting.saleFooter || 'Thank you for your purchase.' %></small></div></div>
     </div>
   </div>
 </div>
