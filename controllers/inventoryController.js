@@ -5,7 +5,10 @@ const Sale = require('../models/Sale');
 const SaleCounter = require('../models/SaleCounter');
 const PrintSetting = require('../models/PrintSetting');
 const Patient = require('../models/Patient');
-const { getClinicDate } = require('../utils/helpers');
+const { getClinicDate, formatDateTime } = require('../utils/helpers');
+
+const INVENTORY_PAGE_SIZE = 20;
+const SALES_PAGE_SIZE = 20;
 
 const REQUIRED_HEADERS = [
   'medicine_name',
@@ -124,6 +127,7 @@ exports.index = async (req, res, next) => {
     const stockStatus = String(req.query.stockStatus || '');
     const expiryStatus = String(req.query.expiryStatus || '');
     const sort = String(req.query.sort || 'medicine');
+    const requestedPage = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const conditions = [];
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
@@ -173,7 +177,11 @@ exports.index = async (req, res, next) => {
       group.prices.add(batch.retailPrice);
       if (!group.nextExpiry || batch.expiryDate < group.nextExpiry) group.nextExpiry = batch.expiryDate;
     }
-    const products = [...grouped.values()];
+    const allProducts = [...grouped.values()];
+    const total = allProducts.length;
+    const totalPages = Math.max(Math.ceil(total / INVENTORY_PAGE_SIZE), 1);
+    const page = Math.min(requestedPage, totalPages);
+    const products = allProducts.slice((page - 1) * INVENTORY_PAGE_SIZE, page * INVENTORY_PAGE_SIZE);
 
     const summary = batches.reduce((totals, batch) => {
       totals.quantity += batch.quantity;
@@ -190,6 +198,10 @@ exports.index = async (req, res, next) => {
       expiryStatus,
       sort,
       summary,
+      page,
+      totalPages,
+      total,
+      pageSize: INVENTORY_PAGE_SIZE,
       formatStock: (quantity, product) => {
         const unitsPerPack = product?.unitsPerPack || 1;
         const packs = Math.floor(quantity / unitsPerPack);
@@ -418,7 +430,7 @@ exports.showUpload = (req, res) => {
 exports.showAddStock = (req, res) => {
   res.render('inventory/add', {
     title: 'Add Medicine Stock',
-    form: {},
+    form: { allowLooseSale: true },
     errors: []
   });
 };
@@ -602,6 +614,7 @@ exports.salesIndex = async (req, res, next) => {
     const dateTo = String(req.query.dateTo || '').trim();
     const status = String(req.query.status || '').trim();
     const soldBy = String(req.query.soldBy || '').trim();
+    const requestedPage = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const safeSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const conditions = [];
     if (search) {
@@ -627,17 +640,19 @@ exports.salesIndex = async (req, res, next) => {
     if (soldBy) conditions.push({ performedBy: soldBy });
     const query = conditions.length ? { $and: conditions } : {};
 
-    const [sales, salespeople] = await Promise.all([
-      Sale.find(query).sort({ createdAt: -1 }).lean(),
-      Sale.distinct('performedBy', { performedBy: { $ne: '' } })
+    const total = await Sale.countDocuments(query);
+    const totalPages = Math.max(Math.ceil(total / SALES_PAGE_SIZE), 1);
+    const page = Math.min(requestedPage, totalPages);
+    const [sales, salespeople, summaryRows] = await Promise.all([
+      Sale.find(query).sort({ createdAt: -1 }).skip((page - 1) * SALES_PAGE_SIZE).limit(SALES_PAGE_SIZE).lean(),
+      Sale.distinct('performedBy', { performedBy: { $ne: '' } }),
+      Sale.aggregate([
+        { $match: query },
+        { $match: { status: { $ne: 'VOID' } } },
+        { $group: { _id: null, count: { $sum: 1 }, amount: { $sum: '$grandTotal' }, discount: { $sum: '$discountAmount' } } }
+      ])
     ]);
-    const summary = sales.reduce((totals, sale) => {
-      if (sale.status === 'VOID') return totals;
-      totals.count += 1;
-      totals.amount += sale.grandTotal;
-      totals.discount += sale.discountAmount;
-      return totals;
-    }, { count: 0, amount: 0, discount: 0 });
+    const summary = summaryRows[0] || { count: 0, amount: 0, discount: 0 };
 
     res.render('inventory/sales', {
       title: 'Medicine Sales',
@@ -648,7 +663,12 @@ exports.salesIndex = async (req, res, next) => {
       status,
       soldBy,
       salespeople: salespeople.sort(),
-      summary
+      summary,
+      page,
+      totalPages,
+      total,
+      pageSize: SALES_PAGE_SIZE,
+      formatDateTime
     });
   } catch (error) {
     next(error);
@@ -742,7 +762,8 @@ exports.saleBill = async (req, res, next) => {
       title: `Bill ${sale.invoiceNumber}`,
       sale,
       receiptHeader: savedPrintSetting?.saleHeader || savedPrintSetting?.header || 'My Clinic',
-      receiptFooter: savedPrintSetting?.saleFooter || 'Thank you for your purchase.'
+      receiptFooter: savedPrintSetting?.saleFooter || 'Thank you for your purchase.',
+      formatDateTime
     });
   } catch (error) {
     return next(error);
