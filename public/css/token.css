@@ -151,8 +151,8 @@ dd {
   width: 210mm;
   min-height: 0;
   flex-direction: column;
-  margin: 10mm auto 20px;
-  padding: 6mm 8mm;
+  margin: 8mm auto 20px;
+  padding: 0 8mm 6mm;
   overflow: hidden;
   background: #fff;
   color: #202020;
@@ -161,7 +161,7 @@ dd {
 
 .a4-clinic-header {
   display: grid;
-  min-height: 33mm;
+  min-height: 0;
   flex: 0 0 auto;
   grid-template-columns: minmax(42mm, 1fr) minmax(80mm, 2fr) minmax(42mm, 1fr);
   align-items: flex-start;
@@ -176,7 +176,8 @@ dd {
 .a4-clinic-identity h1 {
   margin: 0;
   font-family: Georgia, serif;
-  font-size: 38px;
+  font-size: 36px;
+  font-weight: 900;
   line-height: 1;
 }
 
@@ -195,9 +196,20 @@ dd {
   text-align: right;
 }
 
+.a4-clinic-identity p {
+  margin-top: 1px;
+  line-height: 1.1;
+}
+
 .a4-doctor strong {
   display: block;
-  font-size: 19px;
+  font-size: 17px;
+}
+
+.a4-doctor span {
+  margin-top: 1px;
+  font-size: 10.5px;
+  line-height: 1.05;
 }
 
 .a4-vco {
@@ -205,13 +217,13 @@ dd {
   align-items: center;
   justify-content: flex-end;
   gap: 2mm;
-  margin-top: 4mm;
+  margin-top: 1mm;
 }
 
 .a4-vco i {
   display: inline-block;
-  width: 5mm;
-  height: 5mm;
+  width: 4mm;
+  height: 4mm;
   border: 1px solid #333;
   background: #fff;
 }
@@ -224,9 +236,9 @@ dd {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: end;
-  padding: 2mm 4mm 3mm;
-  border-bottom: 2.5mm solid #d84c43;
-  flex: 0 0 11mm;
+  padding: 0 4mm 0.75mm;
+  border-bottom: 1.5mm solid #d84c43;
+  flex: 0 0 7mm;
 }
 
 .a4-reference-row .a4-token {
@@ -451,10 +463,10 @@ dd {
 
   .a4-prescription {
     width: 210mm;
-    height: 286mm;
+    height: 288mm;
     min-height: 0;
-    margin: 10mm 0 0;
-    padding: 6mm 8mm;
+    margin: 8mm 0 0;
+    padding: 0 8mm 6mm;
     overflow: hidden;
     break-inside: avoid;
     page-break-after: avoid;
