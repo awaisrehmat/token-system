@@ -151,8 +151,8 @@ dd {
   width: 210mm;
   min-height: 0;
   flex-direction: column;
-  margin: 0 auto 20px;
-  padding: 6mm 8mm 6mm;
+  margin: 10mm auto 20px;
+  padding: 6mm 8mm;
   overflow: hidden;
   background: #fff;
   color: #202020;
@@ -160,18 +160,23 @@ dd {
 }
 
 .a4-clinic-header {
-  display: flex;
-  min-height: 0;
-  flex: 0 0 27mm;
+  display: grid;
+  min-height: 33mm;
+  flex: 0 0 auto;
+  grid-template-columns: minmax(42mm, 1fr) minmax(80mm, 2fr) minmax(42mm, 1fr);
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 12mm;
+  gap: 4mm;
+}
+
+.a4-clinic-identity {
+  grid-column: 2;
+  text-align: center;
 }
 
 .a4-clinic-identity h1 {
   margin: 0;
   font-family: Georgia, serif;
-  font-size: 42px;
+  font-size: 38px;
   line-height: 1;
 }
 
@@ -185,13 +190,34 @@ dd {
 }
 
 .a4-doctor {
-  max-width: 75mm;
+  grid-column: 3;
+  max-width: 100%;
   text-align: right;
 }
 
 .a4-doctor strong {
   display: block;
   font-size: 19px;
+}
+
+.a4-vco {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2mm;
+  margin-top: 4mm;
+}
+
+.a4-vco i {
+  display: inline-block;
+  width: 5mm;
+  height: 5mm;
+  border: 1px solid #333;
+  background: #fff;
+}
+
+.a4-vco b {
+  font-size: 13px;
 }
 
 .a4-reference-row {
@@ -205,12 +231,14 @@ dd {
 
 .a4-reference-row .a4-token {
   grid-column: 2;
+  justify-self: center;
   font-size: 25px;
 }
 
-.a4-reference-row > strong:last-child {
-  grid-column: 3;
-  justify-self: end;
+.a4-reference-row .a4-mr {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: start;
 }
 
 .a4-token span {
@@ -223,14 +251,16 @@ dd {
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 2mm;
   margin-top: 2mm;
-  padding: 4mm;
+  padding: 3mm 4mm 4mm;
+  border: 0;
+  border-radius: 0;
   background: #f0eee9;
-  flex: 0 0 36mm;
-  overflow: hidden;
+  min-height: 48mm;
+  flex: 0 0 auto;
+  overflow: visible;
 }
 
-.a4-patient-band > div,
-.a4-clinical-summary > div {
+.a4-patient-band > div {
   display: flex;
   min-width: 0;
   gap: 2mm;
@@ -238,13 +268,13 @@ dd {
 }
 
 .a4-patient-band span,
-.a4-clinical-summary span {
+.a4-diagnosis-row span {
   flex: none;
   color: #555;
 }
 
 .a4-patient-band strong,
-.a4-clinical-summary strong {
+.a4-diagnosis-row strong {
   min-width: 0;
   flex: 1;
   padding: 0 1mm 1mm;
@@ -252,23 +282,6 @@ dd {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.a4-patient-band > div:nth-child(1) { grid-column: span 6; }
-.a4-patient-band > div:nth-child(2) { grid-column: span 6; }
-.a4-patient-band > div:nth-child(3) { grid-column: span 4; }
-.a4-patient-band > div:nth-child(4) { grid-column: span 4; }
-.a4-patient-band > div:nth-child(5) { grid-column: span 4; }
-.a4-patient-band > div:nth-child(3),
-.a4-patient-band > div:nth-child(4),
-.a4-patient-band > div:nth-child(5),
-.a4-clinical-summary > div:nth-child(-n+3) {
-  flex-direction: column;
-  gap: 0;
-  align-items: stretch;
-}
-.a4-patient-band .a4-wide {
-  grid-column: span 4;
 }
 
 .token-receipt-header,
@@ -281,15 +294,29 @@ dd {
   align-items: stretch;
   gap: 0;
 }
-.a4-patient-band > div:nth-child(7) { grid-column: span 4; }
-.a4-patient-band > div:nth-child(8) { grid-column: span 4; }
 
-.a4-clinical-summary {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1.4fr;
-  gap: 4mm;
-  padding: 3mm 5mm 2mm;
-  flex: 0 0 22mm;
+.a4-field-name,
+.a4-field-relation { grid-column: span 6; }
+.a4-field-age,
+.a4-field-gender,
+.a4-field-weight,
+.a4-field-visit,
+.a4-field-date,
+.a4-field-time,
+.a4-field-contact,
+.a4-field-cnic { grid-column: span 3; }
+.a4-field-address { grid-column: 1 / -1; }
+
+.a4-diagnosis-row {
+  display: flex;
+  align-items: baseline;
+  gap: 3mm;
+  min-height: 13mm;
+  margin: 0;
+  padding: 3mm 6mm 2mm;
+  border: 0;
+  background: #fff;
+  flex: 0 0 auto;
   overflow: hidden;
 }
 
@@ -298,13 +325,13 @@ dd {
   min-height: 0;
   flex: 1 1 auto;
   grid-template-columns: 52mm 1fr;
-  margin-top: 5mm;
+  margin-top: 2mm;
   border-bottom: 1px solid #333;
 }
 
 .a4-notes-column {
   display: grid;
-  grid-template-rows: repeat(10, minmax(0, 1fr));
+  grid-template-rows: repeat(9, minmax(0, 1fr));
   padding: 3mm 5mm 2mm 2mm;
   border-right: 1px solid #444;
 }
@@ -333,12 +360,6 @@ dd {
   font-family: Georgia, serif;
   font-size: 38px;
   font-style: italic;
-}
-
-.a4-clinical-summary .a4-diagnosis {
-  grid-column: 1 / -1;
-  flex-direction: row;
-  gap: 2mm;
 }
 
 .a4-signature {
@@ -430,10 +451,10 @@ dd {
 
   .a4-prescription {
     width: 210mm;
-    height: 296mm;
+    height: 286mm;
     min-height: 0;
-    margin: 0;
-    padding: 6mm 8mm 6mm;
+    margin: 10mm 0 0;
+    padding: 6mm 8mm;
     overflow: hidden;
     break-inside: avoid;
     page-break-after: avoid;

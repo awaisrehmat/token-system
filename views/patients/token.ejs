@@ -19,18 +19,21 @@
   <article class="a4-prescription">
     <header class="a4-clinic-header">
       <div class="a4-clinic-identity"><h1 class="a4-token-header"><%= printSetting.header %></h1><% String(printSetting.a4ClinicDetails || '').split('\n').filter(Boolean).forEach((line) => { %><p><%= line %></p><% }) %></div>
-      <div class="a4-doctor"><strong><%= patient.consultant ? patient.consultant.name : 'Consulting Physician' %></strong><span><%= patient.consultant?.specialization || 'Medical Consultant' %></span></div>
+      <div class="a4-doctor"><strong><%= patient.consultant ? patient.consultant.name : 'Consulting Physician' %></strong><span><%= patient.consultant?.specialization || 'Medical Consultant' %></span><div class="a4-vco"><b>VCO</b><i aria-hidden="true"></i></div></div>
     </header>
-    <div class="a4-reference-row"><strong class="a4-token"><span>Token</span> <%= patient.tokenNumber %></strong><strong>MR # <%= patient.mrNumber %></strong></div>
+    <div class="a4-reference-row"><strong class="a4-mr">MR # <%= patient.mrNumber %></strong><strong class="a4-token"><span>Token</span> <%= patient.tokenNumber %></strong></div>
     <section class="a4-patient-band">
-      <div><span>Patient Name</span><strong><%= patient.patientName %></strong></div>
-      <div><span>Relation</span><strong><%= patient.relationType && patient.relativeName ? `${patient.relationType} ${patient.relativeName}` : '—' %></strong></div>
-      <div><span>No. of Visit</span><strong><%= patient.patientType %></strong></div>
-      <div><span>Time</span><strong><%= formatClinicTime(patient.createdAt) %></strong></div>
-      <div><span>Date</span><strong><%= formatClinicDisplayDate(patient.createdAt) %></strong></div>
-      <div class="a4-wide"><span>Address</span><strong><%= patient.address %></strong></div>
-      <div><span>Contact No.</span><strong><%= patient.contactNumber %></strong></div>
-      <div><span>CNIC</span><strong><%= formatCnic(patient.cnic) %></strong></div>
+      <div class="a4-field-name"><span>Patient Name</span><strong><%= patient.patientName %></strong></div>
+      <div class="a4-field-relation"><span>Relation</span><strong><%= patient.relationType && patient.relativeName ? `${patient.relationType} ${patient.relativeName}` : '—' %></strong></div>
+      <div class="a4-field-age"><span>Age</span><strong><%= patient.age %>y <%= patient.ageMonths || 0 %>m</strong></div>
+      <div class="a4-field-gender"><span>Gender</span><strong><%= patient.sex %></strong></div>
+      <div class="a4-field-weight"><span>Weight (kg)</span><strong>&nbsp;</strong></div>
+      <div class="a4-field-visit"><span>No. of Visit</span><strong><%= patient.patientType %></strong></div>
+      <div class="a4-field-date"><span>Date</span><strong><%= formatClinicDisplayDate(patient.createdAt) %></strong></div>
+      <div class="a4-field-time"><span>Time</span><strong><%= formatClinicTime(patient.createdAt) %></strong></div>
+      <div class="a4-field-contact"><span>Contact No.</span><strong><%= patient.contactNumber %></strong></div>
+      <div class="a4-field-cnic"><span>CNIC</span><strong><%= formatCnic(patient.cnic) %></strong></div>
+      <div class="a4-field-address"><span>Address</span><strong><%= patient.address %></strong></div>
     </section>
     <section class="a4-work-area">
       <aside class="a4-notes-column">
@@ -43,15 +46,9 @@
         <div><strong>History</strong><span></span></div>
         <div><strong>Findings</strong><span></span></div>
         <div><strong>Investigations</strong><span></span></div>
-        <div><strong>VCO</strong><span></span></div>
       </aside>
       <main class="a4-rx-area">
-        <section class="a4-clinical-summary">
-          <div><span>Age</span><strong><%= patient.age %>y <%= patient.ageMonths || 0 %>m</strong></div>
-          <div><span>Gender</span><strong><%= patient.sex %></strong></div>
-          <div><span>Weight (kg)</span><strong>&nbsp;</strong></div>
-          <div class="a4-diagnosis"><span>Provisional / Diagnosis</span><strong><%= patient.description || '' %></strong></div>
-        </section>
+        <section class="a4-diagnosis-row"><span>Provisional / Diagnosis</span><strong><%= patient.description || '' %></strong></section>
         <div class="a4-rx-mark">Rx</div><div class="a4-signature">Signature &amp; Stamp</div>
       </main>
     </section>
