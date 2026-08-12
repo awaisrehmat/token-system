@@ -51,10 +51,10 @@ exports.index = async (req, res, next) => {
         MedicineBatch.countDocuments({ expiryDate: { $lt: now }, quantity: { $gt: 0 } }),
         MedicineBatch.countDocuments({ expiryDate: { $gte: now, $lte: nearExpiry }, quantity: { $gt: 0 } }),
         Sale.aggregate([
-          { $match: { createdAt: { $gte: startOfToday, $lte: endOfToday }, status: { $ne: 'VOID' } } },
+          { $match: { createdAt: { $gte: startOfToday, $lte: endOfToday }, status: { $nin: ['VOID', 'PROCESSING'] } } },
           { $group: { _id: null, count: { $sum: 1 }, revenue: { $sum: '$grandTotal' } } }
         ]),
-        Sale.find({ status: { $ne: 'VOID' } }).sort({ createdAt: -1 }).limit(5).lean(),
+        Sale.find({ status: { $nin: ['VOID', 'PROCESSING'] } }).sort({ createdAt: -1 }).limit(5).lean(),
         showUsers ? MedicineProduct.find({ pricingStatus: 'CONFLICT' }).sort({ name: 1 }).lean() : []
       ]);
       const conflictBatches = pricingConflicts.length

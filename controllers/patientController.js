@@ -221,7 +221,7 @@ exports.history = async (req, res, next) => {
         .sort({ createdAt: -1 })
         .lean(),
       Consultant.find().sort({ name: 1 }).lean(),
-      Sale.find({ patientMr: selectedPatient.mrNumber }).sort({ createdAt: -1 }).lean()
+      Sale.find({ patientMr: selectedPatient.mrNumber, status: { $ne: 'PROCESSING' } }).sort({ createdAt: -1 }).lean()
     ]);
 
     return res.render('patients/history', {

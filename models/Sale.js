@@ -35,9 +35,16 @@ const saleSchema = new mongoose.Schema({
   discountAmount: { type: Number, required: true, min: 0 },
   grandTotal: { type: Number, required: true, min: 0 },
   performedBy: { type: String, trim: true, default: '' },
-  status: { type: String, enum: ['ACTIVE', 'VOID'], default: 'ACTIVE' },
+  requestKey: { type: String, trim: true },
+  requestFingerprint: { type: String, trim: true },
+  requestDedupKey: { type: String, trim: true },
+  status: { type: String, enum: ['PROCESSING', 'ACTIVE', 'VOID'], default: 'ACTIVE' },
   voidedAt: { type: Date, default: null },
   voidedBy: { type: String, trim: true, default: '' }
 }, { timestamps: true });
+
+saleSchema.index({ requestKey: 1 }, { unique: true, sparse: true });
+saleSchema.index({ requestDedupKey: 1 }, { unique: true, sparse: true });
+saleSchema.index({ requestFingerprint: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Sale', saleSchema);

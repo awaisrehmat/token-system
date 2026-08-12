@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const MedicineBatch = require('../models/MedicineBatch');
 const MedicineProduct = require('../models/MedicineProduct');
 const StockTransaction = require('../models/StockTransaction');
@@ -9,6 +10,8 @@ const { getClinicDate, formatDateTime } = require('../utils/helpers');
 
 const INVENTORY_PAGE_SIZE = 20;
 const SALES_PAGE_SIZE = 20;
+const REQUEST_DEDUPLICATION_WINDOW_MS = 5 * 60 * 1000;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
 
 const REQUIRED_HEADERS = [
   'medicine_name',
@@ -27,6 +30,46 @@ const REQUIRED_HEADERS = [
 
 function normalizeMedicineName(value) {
   return String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function operationRequestMetadata(kind, suppliedKey, values) {
+  const normalized = values.map((value) => String(value ?? '').trim().toLowerCase()).join('|');
+  const fingerprint = crypto.createHash('sha256').update(`${kind}|${normalized}`).digest('hex');
+  const suppliedRequestKey = String(suppliedKey || '').trim();
+  const hasSuppliedKey = UUID_PATTERN.test(suppliedRequestKey);
+  const fallbackKey = `${kind}:${Math.floor(Date.now() / REQUEST_DEDUPLICATION_WINDOW_MS)}:${fingerprint}`;
+  return {
+    requestKey: hasSuppliedKey ? `${kind}:${suppliedRequestKey}` : `fallback:${fallbackKey}`,
+    requestFingerprint: fingerprint,
+    requestDedupKey: hasSuppliedKey ? `${kind}:request:${suppliedRequestKey}` : fallbackKey
+  };
+}
+
+function recentOperationQuery(metadata) {
+  const alternatives = [{ requestKey: metadata.requestKey }];
+  if (metadata.requestKey.startsWith('fallback:')) {
+    alternatives.push({
+      requestFingerprint: metadata.requestFingerprint,
+      createdAt: { $gte: new Date(Date.now() - REQUEST_DEDUPLICATION_WINDOW_MS) }
+    });
+  }
+  return {
+    $or: alternatives
+  };
+}
+
+function isOperationKeyConflict(error) {
+  return error?.code === 11000 && Boolean(
+    error.keyPattern?.requestKey || error.keyValue?.requestKey ||
+    error.keyPattern?.requestDedupKey || error.keyValue?.requestDedupKey
+  );
+}
+
+function duplicateSaleRedirect(res, sale) {
+  if (sale && sale.status !== 'PROCESSING') {
+    return res.redirect(`/inventory/sales/${sale._id}/bill?message=${encodeURIComponent('This sale was already completed. The duplicate request was ignored.')}`);
+  }
+  return res.redirect(`/inventory/sale?message=${encodeURIComponent('This sale request is already being processed.')}`);
 }
 
 function packagingSignature(batch) {
@@ -221,7 +264,10 @@ exports.productDetails = async (req, res, next) => {
     const product = await MedicineProduct.findById(req.params.id).lean();
     if (!product) return res.status(404).render('error', { title: 'Medicine Not Found', pageMessage: 'Medicine product not found.' });
     const batches = await MedicineBatch.find({ product: product._id }).sort({ expiryDate: 1 }).lean();
-    const transactions = await StockTransaction.find({ medicineBatch: { $in: batches.map((batch) => batch._id) } })
+    const transactions = await StockTransaction.find({
+      medicineBatch: { $in: batches.map((batch) => batch._id) },
+      operationStatus: { $ne: 'PROCESSING' }
+    })
       .populate('medicineBatch', 'batchNumber expiryDate')
       .sort({ createdAt: -1 })
       .limit(200)
@@ -430,13 +476,16 @@ exports.showUpload = (req, res) => {
 exports.showAddStock = (req, res) => {
   res.render('inventory/add', {
     title: 'Add Medicine Stock',
-    form: { allowLooseSale: true },
+    form: { allowLooseSale: true, stockRequestKey: crypto.randomUUID() },
     errors: []
   });
 };
 
 exports.addStock = async (req, res, next) => {
   const form = {
+    stockRequestKey: UUID_PATTERN.test(String(req.body.stockRequestKey || '').trim())
+      ? String(req.body.stockRequestKey).trim()
+      : crypto.randomUUID(),
     medicineName: String(req.body.medicineName || '').trim(),
     batchNumber: String(req.body.batchNumber || '').trim(),
     expiryDate: String(req.body.expiryDate || '').trim(),
@@ -460,6 +509,12 @@ exports.addStock = async (req, res, next) => {
   const quantity = packsReceived * unitsPerPack + looseReceived;
   const expiryDate = new Date(`${form.expiryDate}T00:00:00.000Z`);
   const errors = [];
+  const requestMetadata = operationRequestMetadata('stock', req.body.stockRequestKey, [
+    form.medicineName, form.batchNumber, form.expiryDate, form.packsReceived,
+    form.looseReceived, form.packUnit, form.looseUnit, form.unitsPerPack,
+    form.allowLooseSale, form.purchasePrice, form.retailPrice,
+    form.looseRetailPrice, form.reference
+  ]);
 
   if (!form.medicineName) errors.push('Medicine name is required.');
   if (!form.batchNumber) errors.push('Batch number is required.');
@@ -500,6 +555,17 @@ exports.addStock = async (req, res, next) => {
       });
     }
 
+    const existingOperation = await StockTransaction.findOne({
+      type: 'IN',
+      ...recentOperationQuery(requestMetadata)
+    }).sort({ createdAt: -1 }).select('operationStatus').lean();
+    if (existingOperation) {
+      const message = existingOperation.operationStatus === 'PROCESSING'
+        ? 'This stock request is already being processed.'
+        : 'This stock was already added. The duplicate request was ignored.';
+      return res.redirect(`/inventory?message=${encodeURIComponent(message)}`);
+    }
+
     const batch = await MedicineBatch.findOneAndUpdate(
       {
         medicineName: form.medicineName,
@@ -507,9 +573,12 @@ exports.addStock = async (req, res, next) => {
         expiryDate
       },
       {
-        $setOnInsert: { product: existingProduct?._id },
-        $inc: { quantity },
-        $set: {
+        $setOnInsert: {
+          product: existingProduct?._id,
+          medicineName: form.medicineName,
+          batchNumber: form.batchNumber,
+          expiryDate,
+          quantity: 0,
           purchasePrice,
           retailPrice,
           packUnit: form.packUnit,
@@ -522,14 +591,62 @@ exports.addStock = async (req, res, next) => {
       { upsert: true, new: true, runValidators: true }
     );
 
-    await StockTransaction.create({
-      medicineBatch: batch._id,
-      type: 'IN',
-      quantity,
-      reference: form.reference,
-      remarks: `${packsReceived} ${form.packUnit}(s) + ${looseReceived} ${form.looseUnit}(s) received`,
-      performedBy: req.session?.username || ''
-    });
+    let operation;
+    try {
+      operation = await StockTransaction.create({
+        medicineBatch: batch._id,
+        type: 'IN',
+        quantity,
+        reference: form.reference,
+        remarks: `${packsReceived} ${form.packUnit}(s) + ${looseReceived} ${form.looseUnit}(s) received`,
+        performedBy: req.session?.username || '',
+        ...requestMetadata,
+        operationStatus: 'PROCESSING'
+      });
+    } catch (error) {
+      if (!isOperationKeyConflict(error)) throw error;
+      const existingOperation = await StockTransaction.findOne({
+        $or: [
+          { requestKey: requestMetadata.requestKey },
+          { requestDedupKey: requestMetadata.requestDedupKey }
+        ]
+      }).select('operationStatus').lean();
+      const message = existingOperation?.operationStatus === 'COMPLETED'
+        ? 'This stock was already added. The duplicate request was ignored.'
+        : 'This stock request is already being processed.';
+      return res.redirect(`/inventory?message=${encodeURIComponent(message)}`);
+    }
+
+    let stockApplied = false;
+    try {
+      const applied = await MedicineBatch.updateOne(
+        { _id: batch._id },
+        {
+          $inc: { quantity },
+          $set: {
+            purchasePrice,
+            retailPrice,
+            packUnit: form.packUnit,
+            looseUnit: form.looseUnit,
+            unitsPerPack,
+            allowLooseSale: form.allowLooseSale,
+            looseRetailPrice: form.allowLooseSale ? looseRetailPrice : 0
+          }
+        },
+        { runValidators: true }
+      );
+      if (!applied.modifiedCount) throw new Error('The stock could not be updated. Please try again.');
+      stockApplied = true;
+      const completed = await StockTransaction.updateOne(
+        { _id: operation._id, operationStatus: 'PROCESSING' },
+        { $set: { operationStatus: 'COMPLETED' } }
+      );
+      if (!completed.modifiedCount) throw new Error('The stock operation could not be finalized. Please try again.');
+    } catch (error) {
+      if (stockApplied) await MedicineBatch.updateOne({ _id: batch._id }, { $inc: { quantity: -quantity } });
+      await StockTransaction.deleteOne({ _id: operation._id, operationStatus: 'PROCESSING' });
+      throw error;
+    }
 
     await ensureProductCatalog();
 
@@ -599,7 +716,7 @@ exports.showSale = async (req, res, next) => {
       medicines,
       patients,
       priceConflicts,
-      form: { patientMr: '', customerName: 'Walk-in customer', items: Array.from({ length: 4 }, () => ({})) },
+      form: { patientMr: '', customerName: 'Walk-in customer', saleRequestKey: crypto.randomUUID(), items: Array.from({ length: 4 }, () => ({})) },
       errors: []
     });
   } catch (error) {
@@ -616,7 +733,7 @@ exports.salesIndex = async (req, res, next) => {
     const soldBy = String(req.query.soldBy || '').trim();
     const requestedPage = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const safeSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const conditions = [];
+    const conditions = [{ status: { $ne: 'PROCESSING' } }];
     if (search) {
       conditions.push({
         $or: [
@@ -645,7 +762,7 @@ exports.salesIndex = async (req, res, next) => {
     const page = Math.min(requestedPage, totalPages);
     const [sales, salespeople, summaryRows] = await Promise.all([
       Sale.find(query).sort({ createdAt: -1 }).skip((page - 1) * SALES_PAGE_SIZE).limit(SALES_PAGE_SIZE).lean(),
-      Sale.distinct('performedBy', { performedBy: { $ne: '' } }),
+      Sale.distinct('performedBy', { performedBy: { $ne: '' }, status: { $ne: 'PROCESSING' } }),
       Sale.aggregate([
         { $match: query },
         { $match: { status: { $ne: 'VOID' } } },
@@ -678,7 +795,7 @@ exports.salesIndex = async (req, res, next) => {
 exports.deleteSale = async (req, res, next) => {
   try {
     const sale = await Sale.findOneAndUpdate(
-      { _id: req.params.id, status: { $ne: 'VOID' } },
+      { _id: req.params.id, status: { $nin: ['VOID', 'PROCESSING'] } },
       {
         $set: {
           status: 'VOID',
@@ -748,7 +865,7 @@ exports.saleBill = async (req, res, next) => {
     }
 
     const [sale, savedPrintSetting] = await Promise.all([
-      Sale.findById(req.params.id).lean(),
+      Sale.findOne({ _id: req.params.id, status: { $ne: 'PROCESSING' } }).lean(),
       PrintSetting.findOne({ key: 'default' }).lean()
     ]);
     if (!sale) {
@@ -812,6 +929,9 @@ async function createInvoiceNumber() {
 exports.createSale = async (req, res, next) => {
   const items = saleItems(req.body);
   const form = {
+    saleRequestKey: UUID_PATTERN.test(String(req.body.saleRequestKey || '').trim())
+      ? String(req.body.saleRequestKey).trim()
+      : crypto.randomUUID(),
     patientMr: String(req.body.patientMr || '').trim().toUpperCase(),
     customerName: String(req.body.customerName || '').trim(),
     items
@@ -844,6 +964,18 @@ exports.createSale = async (req, res, next) => {
       linkedPatient = await Patient.findOne({ mrNumber: form.patientMr }).sort({ createdAt: -1 }).lean();
       if (!linkedPatient) errors.push('Enter a valid patient MR number, or leave MR blank for a walk-in sale.');
       else form.customerName = linkedPatient.patientName;
+    }
+    const requestMetadata = operationRequestMetadata('sale', req.body.saleRequestKey, [
+      form.patientMr,
+      form.customerName,
+      ...items.flatMap((item) => [item.medicineName, item.packQuantity, item.looseQuantity, item.discountPercent])
+    ]);
+    if (!errors.length) {
+      const existingOperation = await Sale.findOne(recentOperationQuery(requestMetadata))
+        .sort({ createdAt: -1 })
+        .select('_id status')
+        .lean();
+      if (existingOperation) return duplicateSaleRedirect(res, existingOperation);
     }
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
@@ -925,9 +1057,35 @@ exports.createSale = async (req, res, next) => {
     }
 
     const invoiceNumber = await createInvoiceNumber();
+    const subtotal = preparedItems.reduce((sum, item) => sum + item.subtotal, 0);
+    const discountAmount = preparedItems.reduce((sum, item) => sum + item.discountAmount, 0);
     const appliedAllocations = [];
     const transactionIds = [];
     let createdSale;
+
+    try {
+      createdSale = await Sale.create({
+        invoiceNumber,
+        patientMr: form.patientMr,
+        customerName: form.customerName || 'Walk-in customer',
+        items: preparedItems,
+        subtotal,
+        discountAmount,
+        grandTotal: subtotal - discountAmount,
+        performedBy: req.session?.username || '',
+        ...requestMetadata,
+        status: 'PROCESSING'
+      });
+    } catch (error) {
+      if (!isOperationKeyConflict(error)) throw error;
+      const existingOperation = await Sale.findOne({
+        $or: [
+          { requestKey: requestMetadata.requestKey },
+          { requestDedupKey: requestMetadata.requestDedupKey }
+        ]
+      }).select('_id status').lean();
+      return duplicateSaleRedirect(res, existingOperation);
+    }
 
     try {
       for (const item of preparedItems) {
@@ -953,18 +1111,11 @@ exports.createSale = async (req, res, next) => {
         }
       }
 
-      const subtotal = preparedItems.reduce((sum, item) => sum + item.subtotal, 0);
-      const discountAmount = preparedItems.reduce((sum, item) => sum + item.discountAmount, 0);
-      createdSale = await Sale.create({
-        invoiceNumber,
-        patientMr: form.patientMr,
-        customerName: form.customerName || 'Walk-in customer',
-        items: preparedItems,
-        subtotal,
-        discountAmount,
-        grandTotal: subtotal - discountAmount,
-        performedBy: req.session?.username || ''
-      });
+      const completed = await Sale.updateOne(
+        { _id: createdSale._id, status: 'PROCESSING' },
+        { $set: { status: 'ACTIVE' } }
+      );
+      if (!completed.modifiedCount) throw new Error('The sale could not be finalized. Please try again.');
     } catch (error) {
       await Promise.all(appliedAllocations.map((allocation) =>
         MedicineBatch.updateOne(
@@ -975,6 +1126,7 @@ exports.createSale = async (req, res, next) => {
       if (transactionIds.length) {
         await StockTransaction.deleteMany({ _id: { $in: transactionIds } });
       }
+      await Sale.deleteOne({ _id: createdSale._id, status: 'PROCESSING' });
       throw error;
     }
 

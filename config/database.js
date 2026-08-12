@@ -39,6 +39,12 @@ async function ensureUserIndexes() {
   await User.syncIndexes();
 }
 
+async function ensureInventoryOperationIndexes() {
+  const Sale = require('../models/Sale');
+  const StockTransaction = require('../models/StockTransaction');
+  await Promise.all([Sale.createIndexes(), StockTransaction.createIndexes()]);
+}
+
 async function ensurePhysicianTokenIndex() {
   const Patient = require('../models/Patient');
   const DailyCounter = require('../models/DailyCounter');
@@ -171,7 +177,8 @@ async function connectDatabase() {
       .then(async () => {
         await Promise.all([
           ensurePhysicianTokenIndex(),
-          ensureUserIndexes()
+          ensureUserIndexes(),
+          ensureInventoryOperationIndexes()
         ]);
         console.log('Connected to MongoDB');
         return mongoose.connection;

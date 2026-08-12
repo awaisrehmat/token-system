@@ -8,6 +8,7 @@
 <% if (errors.length) { %><div class="alert alert-danger app-alert"><ul class="mb-0"><% errors.forEach((error) => { %><li><%= error %></li><% }) %></ul></div><% } %>
 
 <form action="/inventory/add" method="post" class="card app-card">
+  <input type="hidden" name="stockRequestKey" value="<%= form.stockRequestKey || '' %>">
   <div class="card-header bg-white py-3"><h2 class="h5 mb-0"><i class="bi bi-capsule me-2 text-primary"></i>Medicine, Packing &amp; Batch</h2></div>
   <div class="card-body p-4">
     <div class="row g-3">

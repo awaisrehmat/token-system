@@ -31,6 +31,7 @@
 <% } %>
 
 <form action="/inventory/sale" method="post" id="saleForm">
+  <input type="hidden" name="saleRequestKey" value="<%= form.saleRequestKey || '' %>">
   <div class="alert alert-danger app-alert d-none" id="clientSaleError"><i class="bi bi-exclamation-circle-fill me-2"></i>Please correct the highlighted rows.</div>
   <div class="card app-card sale-sheet-card">
     <div class="sale-sheet-header">
